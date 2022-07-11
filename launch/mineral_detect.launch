@@ -1,0 +1,21 @@
+<launch>
+  <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen" >
+    <param name="video_device" value="/dev/video0" />
+    <param name="image_width" value="640" />
+    <param name="image_height" value="480" />
+    <param name="pixel_format" value="yuyv" />
+    <param name="camera_frame_id" value="usb_cam" />
+    <param name="io_method" value="mmap"/>
+    <param name="framerate" value="60"/>
+
+    <param name="brightness" value="127"/>
+    <param name="saturation" value="127"/>
+    <param name="contrast" value="127"/>
+    <param name="sharpness" value="127"/>
+  </node>
+
+  <node pkg="nodelet" type="nodelet" name="nodelet_manager"  args="manager" output="screen"/>
+
+  <node pkg="nodelet" type="nodelet" name="mineral_detect_node" args="load mineral_detect nodelet_manager" output="screen" />
+
+</launch>

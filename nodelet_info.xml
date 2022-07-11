@@ -1,0 +1,5 @@
+<library path="lib/libmineral_detect">
+    <class name="mineral_detect" type="mineral_detect::Detector" base_class_type="nodelet::Nodelet">
+        <description>the detect mineral class</description>
+    </class>
+</library>
