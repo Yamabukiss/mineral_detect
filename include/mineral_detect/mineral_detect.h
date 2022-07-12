@@ -28,7 +28,6 @@ namespace mineral_detect
         int thresh_type_;
         int morph_type_;
         int morph_iterations_;
-        int contoursidx_;
 
         dynamic_reconfigure::Server<mineral_detect::dynamicConfig> server_;
         dynamic_reconfigure::Server<mineral_detect::dynamicConfig>::CallbackType callback_;
