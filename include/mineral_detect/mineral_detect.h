@@ -23,8 +23,16 @@ namespace mineral_detect
         void dynamicCallback(mineral_detect::dynamicConfig& config);
 
         cv_bridge::CvImagePtr cv_image_;
-        cv::Mat gray_img_;
-        cv::Mat thresh_img_;
+
+        int thresh_;
+        int thresh_type_;
+        int harris_thresh_;
+        int block_size_;
+        double r_alpha_;
+        dynamic_reconfigure::Server<mineral_detect::dynamicConfig> server_;
+        dynamic_reconfigure::Server<mineral_detect::dynamicConfig>::CallbackType callback_;
+        ros::NodeHandle nh_;
+
         ros::Publisher publisher_;
         ros::Subscriber subscriber_;
     };
