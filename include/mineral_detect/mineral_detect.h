@@ -26,13 +26,14 @@ namespace mineral_detect
 
         int thresh_;
         int thresh_type_;
-        int harris_thresh_;
-        int block_size_;
-        double r_alpha_;
+        int morph_type_;
+        int morph_iterations_;
+        int contoursidx_;
+
         dynamic_reconfigure::Server<mineral_detect::dynamicConfig> server_;
         dynamic_reconfigure::Server<mineral_detect::dynamicConfig>::CallbackType callback_;
-        ros::NodeHandle nh_;
 
+        ros::NodeHandle nh_;
         ros::Publisher publisher_;
         ros::Subscriber subscriber_;
     };

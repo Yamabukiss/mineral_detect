@@ -15,35 +15,23 @@ namespace mineral_detect {
         cv::Mat origin_img = cv_image_->image.clone();
         cv::Mat gray_img;
         cv::cvtColor(origin_img, gray_img, CV_BGR2GRAY);
-//        cv::Mat thresh_img;
-//        cv::threshold(gray_img,thresh_img,thresh_,255,thresh_type_);
-        // Harris Corner
-        cv::Mat harris_dst, norm_harris_dst, norm_abs_harris_dst;
-        harris_dst = cv::Mat::zeros(gray_img.size(), CV_32FC1);
-        cv::cornerHarris(gray_img, harris_dst, block_size_, 3, r_alpha_, cv::BORDER_DEFAULT);
-        cv::normalize(harris_dst, norm_harris_dst, 0, 255, cv::NORM_MINMAX, CV_32FC1, cv::Mat());
-        cv::convertScaleAbs(norm_harris_dst, norm_abs_harris_dst);
-
-        for (int i = 0; i < norm_harris_dst.rows; i++)
-        {
-            for (int j = 0; j < norm_harris_dst.cols; j++)
-            {
-                if ((int)norm_harris_dst.at<float>(i, j) > harris_thresh_)
-                {
-                    circle(norm_abs_harris_dst, cv::Point(j, i), 10, cv::Scalar(255, 255, 255), 2, 8, 0);
-                }
-            }
-        }
-
-        publisher_.publish(cv_bridge::CvImage(std_msgs::Header(), "mono8", norm_abs_harris_dst).toImageMsg());
+        cv::Mat thresh_img;
+        cv::threshold(gray_img,thresh_img,thresh_,255,thresh_type_);
+        cv::Mat mor_img;
+        cv::morphologyEx(thresh_img,mor_img,morph_type_,3,cv::Point(-1,-1),morph_iterations_);
+        std::vector< std::vector< cv::Point> > contours;
+        cv::findContours(mor_img,contours,cv::RETR_LIST,CV_CHAIN_APPROX_SIMPLE);
+        mor_img=cv::Scalar::all(0);
+        cv::drawContours(mor_img, contours, contoursidx_, cv::Scalar::all(255));
+        publisher_.publish(cv_bridge::CvImage(std_msgs::Header(), "mono8", mor_img).toImageMsg());
         }
 
         void Detector::dynamicCallback(mineral_detect::dynamicConfig &config) {
             thresh_ = config.thresh;
             thresh_type_ = config.thresh_type;
-            harris_thresh_=config.harris_thresh;
-            block_size_ = config.block_size;
-            r_alpha_ = config.r_alpha;
+            morph_type_ = config.morph_type;
+            morph_iterations_ = config.morph_iterations;
+            contoursidx_ = config.contoursidx;
         }
 
         Detector::~Detector()=default;
