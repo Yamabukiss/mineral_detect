@@ -24,10 +24,13 @@ namespace mineral_detect
 
         cv_bridge::CvImagePtr cv_image_;
 
-        int thresh_;
-        int thresh_type_;
+        int thresh1_;
+        int thresh2_;
+        bool l2_gradient_;
+        int hough_thresh_;
+        double min_line_length_;
+        double max_line_gap_;
         int morph_type_;
-        int morph_iterations_;
 
         dynamic_reconfigure::Server<mineral_detect::dynamicConfig> server_;
         dynamic_reconfigure::Server<mineral_detect::dynamicConfig>::CallbackType callback_;
