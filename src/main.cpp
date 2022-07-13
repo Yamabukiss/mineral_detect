@@ -15,16 +15,16 @@ namespace mineral_detect {
         cv::Mat origin_img = cv_image_->image.clone();
         cv::Mat gray_img;
         cv::cvtColor(origin_img, gray_img, CV_BGR2GRAY);
-        cv::Mat thresh_img;
-        cv::threshold(gray_img,thresh_img,thresh_,255,thresh_type_);
         cv::Mat gauss_img;
-        cv::GaussianBlur(thresh_img,gauss_img,cv::Size (3,3),0,0);
+        cv::GaussianBlur(gray_img,gauss_img,cv::Size (3,3),0,0);
+        cv::Mat canny_img;
+        cv::Canny(gauss_img,canny_img,thresh1_,thresh2_,3, true);
         cv::Mat mor_img;
-        cv::morphologyEx(gauss_img,mor_img,morph_type_,3,cv::Point(-1,-1),morph_iterations_);
+        cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3), cv::Point(-1, -1));
+        cv::morphologyEx(canny_img,mor_img,morph_type_,kernel,cv::Point(-1,-1),morph_iterations_);
         std::vector< std::vector< cv::Point> > contours;
         cv::findContours(mor_img,contours,cv::RETR_EXTERNAL,CV_CHAIN_APPROX_SIMPLE);
         mor_img=cv::Scalar::all(0);
-//        cv::drawContours(mor_img, contours, -1, cv::Scalar::all(255));
         cv::Point2f min_area_rect_points[4];
         for (int i = 0; i < contours.size(); ++i)
         {
@@ -38,10 +38,10 @@ namespace mineral_detect {
         }
 
         void Detector::dynamicCallback(mineral_detect::dynamicConfig &config) {
-            thresh_ = config.thresh;
-            thresh_type_ = config.thresh_type;
             morph_type_ = config.morph_type;
             morph_iterations_ = config.morph_iterations;
+            thresh1_ = config.canny_thresh1;
+            thresh2_ = config.canny_thresh2;
         }
 
         Detector::~Detector()=default;
