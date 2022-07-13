@@ -22,12 +22,15 @@ namespace mineral_detect
 
         void dynamicCallback(mineral_detect::dynamicConfig& config);
 
+
         cv_bridge::CvImagePtr cv_image_;
 
         int thresh1_;
         int thresh2_;
         bool l2_gradient_;
         int hough_thresh_;
+        int hough_rho_;
+        int hough_theta_;
         double min_line_length_;
         double max_line_gap_;
         int morph_type_;

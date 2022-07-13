@@ -20,21 +20,25 @@ namespace mineral_detect {
         cv::Mat canny_img;
         cv::Canny(gauss_img,canny_img,thresh1_,thresh2_,3,l2_gradient_);
         cv::Mat mor_img;
-        cv::morphologyEx(canny_img,mor_img,morph_type_,3,cv::Point(-1,-1),1);
-        std::vector<cv::Vec4i> lines;
-        cv::HoughLinesP(mor_img,lines,1,1,hough_thresh_,min_line_length_,max_line_gap_);
+        cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3), cv::Point(-1, -1));
+        cv::morphologyEx(canny_img,mor_img,morph_type_,kernel,cv::Point(-1,-1),1);
+        std::vector<cv::Vec4f> lines;
+        cv::HoughLinesP(mor_img,lines,hough_rho_,hough_theta_,hough_thresh_,min_line_length_,max_line_gap_);
         mor_img=cv::Scalar::all(0);
-        for( size_t i = 0; i < lines.size(); i++ )
+        for(int i=0;i<lines.size();i++)
         {
-            cv::Vec4i l = lines[i];
-            line( mor_img, cv::Point(l[0], l[1]), cv::Point(l[2], l[3]), cv::Scalar(255), 1);
+            cv::Vec4f line=lines[i];
+            cv::line(mor_img,cv::Point2f (line[0],line[1]),cv::Point2f (line[2],line[3]),cv::Scalar(255),1);
         }
+
         publisher_.publish(cv_bridge::CvImage(std_msgs::Header(), "mono8", mor_img).toImageMsg());
         }
 
         void Detector::dynamicCallback(mineral_detect::dynamicConfig &config) {
             thresh1_ = config.thresh1;
             thresh2_ = config.thresh2;
+            hough_rho_ = config.rho;
+            hough_theta_ = config.theta;
             l2_gradient_ = config.l2_gradient;
             morph_type_ = config.morph_type;
             hough_thresh_=config.hough_thresh;
