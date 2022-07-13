@@ -30,11 +30,26 @@ namespace mineral_detect {
         {
             cv::RotatedRect min_area_rect = cv::minAreaRect(cv::Mat(contours[i]));
             min_area_rect.points(min_area_rect_points);
-            for( int i = 0; i < 4; i++ ){
-                cv::line(mor_img, min_area_rect_points[i], min_area_rect_points[(i+1)%4],cv::Scalar(100, 200, 211), 2, cv::LINE_AA);
+            for( int  j= 0; j < 4; j++ ){
+                if(chooseRect(min_area_rect_points[0],min_area_rect_points[2]))
+                {
+                    cv::line(mor_img, min_area_rect_points[j], min_area_rect_points[(j + 1) % 4], cv::Scalar(255), 2,cv::LINE_AA);
+                }
+                else break;
             }
         }
         publisher_.publish(cv_bridge::CvImage(std_msgs::Header(), "mono8", mor_img).toImageMsg());
+        }
+
+        bool Detector::chooseRect(const cv::Point2f &point1, const cv::Point2f &point2)
+        {
+            double subtract_x=abs(point1.x-point2.x);
+            double subtract_y= abs(point1.y-point2.y);
+            double k= abs(subtract_y/subtract_x);
+            if(k<=1+k_bias_&&k>=1-k_bias_) {
+                if (subtract_x <= subtract_y + length_bias_ && subtract_x >= subtract_y - length_bias_) return true;
+            }
+                else return false;
         }
 
         void Detector::dynamicCallback(mineral_detect::dynamicConfig &config) {
@@ -42,6 +57,8 @@ namespace mineral_detect {
             morph_iterations_ = config.morph_iterations;
             thresh1_ = config.canny_thresh1;
             thresh2_ = config.canny_thresh2;
+            k_bias_=config.k_bias;
+            length_bias_=config.length_bias;
         }
 
         Detector::~Detector()=default;

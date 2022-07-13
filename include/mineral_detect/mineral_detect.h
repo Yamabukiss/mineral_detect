@@ -22,12 +22,16 @@ namespace mineral_detect
 
         void dynamicCallback(mineral_detect::dynamicConfig& config);
 
+        bool chooseRect(const cv::Point2f &point1,const cv::Point2f &point2);
+
         cv_bridge::CvImagePtr cv_image_;
 
         int morph_type_;
         int morph_iterations_;
         int thresh1_;
         int thresh2_;
+        double k_bias_;
+        double length_bias_;
         dynamic_reconfigure::Server<mineral_detect::dynamicConfig> server_;
         dynamic_reconfigure::Server<mineral_detect::dynamicConfig>::CallbackType callback_;
 
