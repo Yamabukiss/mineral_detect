@@ -32,6 +32,8 @@ namespace mineral_detect
         int thresh2_;
         double k_bias_;
         double length_bias_;
+        double min_area_thresh_;
+        double max_area_thresh_;
         dynamic_reconfigure::Server<mineral_detect::dynamicConfig> server_;
         dynamic_reconfigure::Server<mineral_detect::dynamicConfig>::CallbackType callback_;
 

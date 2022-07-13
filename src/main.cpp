@@ -46,8 +46,10 @@ namespace mineral_detect {
             double subtract_x=abs(point1.x-point2.x);
             double subtract_y= abs(point1.y-point2.y);
             double k= abs(subtract_y/subtract_x);
-            if(k<=1+k_bias_&&k>=1-k_bias_) {
-                if (subtract_x <= subtract_y + length_bias_ && subtract_x >= subtract_y - length_bias_) return true;
+            double area=subtract_y*subtract_x;
+            if(k<=1+k_bias_&&k>=1-k_bias_&&subtract_x <= subtract_y + length_bias_ && subtract_x >= subtract_y - length_bias_&&area>=min_area_thresh_&&area<=max_area_thresh_)
+            {
+                        return true;
             }
                 else return false;
         }
@@ -59,6 +61,8 @@ namespace mineral_detect {
             thresh2_ = config.canny_thresh2;
             k_bias_=config.k_bias;
             length_bias_=config.length_bias;
+            min_area_thresh_=config.min_area_thresh;
+            max_area_thresh_=config.max_area_thresh;
         }
 
         Detector::~Detector()=default;
