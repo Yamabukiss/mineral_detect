@@ -1,6 +1,7 @@
 #pragma once
 
 #include <sensor_msgs/Image.h>
+#include <algorithm>
 #include "ros/ros.h"
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/opencv.hpp>
@@ -22,7 +23,9 @@ namespace mineral_detect
 
         void dynamicCallback(mineral_detect::dynamicConfig& config);
 
-        bool chooseRect(const cv::Point2f &point1,const cv::Point2f &point2);
+        bool chooseRect(const cv::Point2f &point1, const cv::Point2f &point2,const cv::Point2f &point3);
+
+        cv::Point2f getMiddlePoint(const std::vector<float> &point_x_vector,const std::vector<float> &point_y_vector);
 
         cv_bridge::CvImagePtr cv_image_;
 
