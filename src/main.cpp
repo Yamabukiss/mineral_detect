@@ -4,6 +4,37 @@ namespace mineral_detect {
 
     void Detector::onInit() {
         nh_ = getMTPrivateNodeHandle();
+
+        XmlRpc::XmlRpcValue distortion_param_list;
+        std::vector<double> distortion_vec;
+        if(ros::param::get("/distortion_coefficients/data",distortion_param_list))
+        {
+            for (int i = 0; i < distortion_param_list.size(); ++i)
+            {
+                XmlRpc::XmlRpcValue tmp_value = distortion_param_list[i];
+                if(tmp_value.getType() == XmlRpc::XmlRpcValue::TypeDouble)
+                    distortion_vec.push_back(double(tmp_value));
+            }
+
+            distortion_coefficients_ =(cv::Mat_<double>(1,5)<<distortion_vec[0],distortion_vec[1],distortion_vec[2],distortion_vec[3],distortion_vec[4]);
+
+        }
+
+        XmlRpc::XmlRpcValue camera_param_list;
+        std::vector<double> camera_vec;
+        if(ros::param::get("/camera_matrix/data",camera_param_list))
+        {
+            for (int i = 0; i < camera_param_list.size(); ++i)
+            {
+                XmlRpc::XmlRpcValue tmp_value = camera_param_list[i];
+                if(tmp_value.getType() == XmlRpc::XmlRpcValue::TypeDouble)
+                    camera_vec.push_back(double(tmp_value));
+            }
+
+            camera_matrix_ =(cv::Mat_<double>(3,3)<<camera_vec[0],camera_vec[1],camera_vec[2],camera_vec[3],camera_vec[4],camera_vec[5],camera_vec[6],camera_vec[7],camera_vec[8]);
+
+        }
+
         subscriber_ = nh_.subscribe("/usb_cam/image_raw", 1, &Detector::receiveFromCam, this);
         publisher_ = nh_.advertise<sensor_msgs::Image>("image_publisher", 1);
         callback_ = boost::bind(&Detector::dynamicCallback, this, _1);
@@ -70,8 +101,20 @@ namespace mineral_detect {
             float biggest_y=*std::max_element(std::begin(point_y_vector),std::end(point_y_vector));
             float smallest_x=*std::min_element(std::begin(point_x_vector), std::end(point_x_vector));
             float smallest_y=*std::min_element(std::begin(point_y_vector),std::end(point_y_vector));
+            std::vector<cv::Point2f> corner_point2d_vec;
+            corner_point2d_vec.emplace_back(smallest_x,smallest_y);
+            corner_point2d_vec.emplace_back(biggest_x,smallest_y);
+            corner_point2d_vec.emplace_back(biggest_x,biggest_y);
+            corner_point2d_vec.emplace_back(smallest_x,biggest_y);
+            std::vector<cv::Point3f> corner_point3d_vec;
+            corner_point3d_vec.emplace_back(0,0,150);
+            corner_point3d_vec.emplace_back(0,150,150);
+            corner_point3d_vec.emplace_back(0,150,0);
+            corner_point3d_vec.emplace_back(0,0,0);
+            cv::solvePnP(corner_point3d_vec,corner_point2d_vec,camera_matrix_,distortion_coefficients_,rvec_,tvec_);
             float middle_x=smallest_x+(biggest_x-smallest_x)/2;
             float middle_y=smallest_y+(biggest_y-smallest_y)/2;
+
             return {middle_x,middle_y};
         }
 

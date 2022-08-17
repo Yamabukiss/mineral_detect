@@ -37,6 +37,10 @@ namespace mineral_detect
         double length_bias_;
         double min_area_thresh_;
         double max_area_thresh_;
+        cv::Mat camera_matrix_;
+        cv::Mat distortion_coefficients_;
+        cv::Mat rvec_;
+        cv::Mat tvec_;
         dynamic_reconfigure::Server<mineral_detect::dynamicConfig> server_;
         dynamic_reconfigure::Server<mineral_detect::dynamicConfig>::CallbackType callback_;
 
