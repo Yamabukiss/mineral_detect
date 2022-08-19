@@ -25,7 +25,7 @@ namespace mineral_detect
 
         bool chooseRect(const cv::Point2f &point1, const cv::Point2f &point2,const cv::Point2f &point3);
 
-        cv::Point2f getMiddlePoint(const std::vector<float> &point_x_vector,const std::vector<float> &point_y_vector);
+        cv::Point2f getMiddlePoint(const std::vector<float> &point_x_vector,const std::vector<float> &point_y_vector,std::vector<cv::Point2f> &coordinate_vec2d);
 
         cv_bridge::CvImagePtr cv_image_;
 
@@ -45,6 +45,7 @@ namespace mineral_detect
         dynamic_reconfigure::Server<mineral_detect::dynamicConfig>::CallbackType callback_;
 
         ros::NodeHandle nh_;
+        ros::Publisher mor_publisher_;
         ros::Publisher publisher_;
         ros::Subscriber subscriber_;
     };

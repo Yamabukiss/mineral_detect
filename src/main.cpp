@@ -75,7 +75,11 @@ namespace mineral_detect {
         }
         if(!point_x_vector.empty())
         {
-            cv::Point2f center_point = getMiddlePoint(point_x_vector, point_y_vector);
+            std::vector<cv::Point2f> coordinate_vec2d;
+            cv::Point2f center_point = getMiddlePoint(point_x_vector, point_y_vector,coordinate_vec2d);
+            cv::line(mor_img,coordinate_vec2d[0],coordinate_vec2d[1],cv::Scalar(255));
+            cv::line(mor_img,coordinate_vec2d[0],coordinate_vec2d[2],cv::Scalar(255));
+            cv::line(mor_img,coordinate_vec2d[0],coordinate_vec2d[3],cv::Scalar(255));
             cv::circle(mor_img, center_point, 10, cv::Scalar(255), 2);
         }
 
@@ -95,12 +99,13 @@ namespace mineral_detect {
                 else return false;
         }
 
-        cv::Point2f Detector::getMiddlePoint(const std::vector<float> &point_x_vector,const std::vector<float> &point_y_vector)
+        cv::Point2f Detector::getMiddlePoint(const std::vector<float> &point_x_vector,const std::vector<float> &point_y_vector,std::vector<cv::Point2f> &coordinate_vec2d)
         {
             float biggest_x = *std::max_element(std::begin(point_x_vector), std::end(point_x_vector));
             float biggest_y=*std::max_element(std::begin(point_y_vector),std::end(point_y_vector));
             float smallest_x=*std::min_element(std::begin(point_x_vector), std::end(point_x_vector));
             float smallest_y=*std::min_element(std::begin(point_y_vector),std::end(point_y_vector));
+
             std::vector<cv::Point2f> corner_point2d_vec;
             corner_point2d_vec.emplace_back(smallest_x,smallest_y);
             corner_point2d_vec.emplace_back(biggest_x,smallest_y);
@@ -112,6 +117,14 @@ namespace mineral_detect {
             corner_point3d_vec.emplace_back(0,150,0);
             corner_point3d_vec.emplace_back(0,0,0);
             cv::solvePnP(corner_point3d_vec,corner_point2d_vec,camera_matrix_,distortion_coefficients_,rvec_,tvec_);
+
+            std::vector<cv::Point3f> coordinate_vec3d;
+            coordinate_vec3d.emplace_back(0, 0, 0);
+            coordinate_vec3d.emplace_back(50, 0, 0);
+            coordinate_vec3d.emplace_back(0, 50, 0);
+            coordinate_vec3d.emplace_back(0, 0, 50);
+            cv::projectPoints(coordinate_vec3d,rvec_,tvec_,camera_matrix_,distortion_coefficients_,coordinate_vec2d);
+
             float middle_x=smallest_x+(biggest_x-smallest_x)/2;
             float middle_y=smallest_y+(biggest_y-smallest_y)/2;
 
