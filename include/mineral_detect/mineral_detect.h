@@ -45,8 +45,8 @@ namespace mineral_detect
         dynamic_reconfigure::Server<mineral_detect::dynamicConfig>::CallbackType callback_;
 
         ros::NodeHandle nh_;
-        ros::Publisher mor_publisher_;
         ros::Publisher publisher_;
+        ros::Publisher publisher2_;
         ros::Subscriber subscriber_;
     };
 }
