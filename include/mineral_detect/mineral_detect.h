@@ -25,6 +25,8 @@ namespace mineral_detect
 
         bool chooseRect(const cv::Point2f &point1, const cv::Point2f &point2,const cv::Point2f &point3);
 
+        bool rectColorChoose(const cv::Rect &rect);
+
         cv::Point2f getMiddlePoint(const std::vector<float> &point_x_vector,const std::vector<float> &point_y_vector,std::vector<cv::Point2f> &coordinate_vec2d);
 
         cv_bridge::CvImagePtr cv_image_;
@@ -33,10 +35,17 @@ namespace mineral_detect
         int morph_iterations_;
         int thresh1_;
         int thresh2_;
+        int lower_hsv_h_;
+        int lower_hsv_s_;
+        int lower_hsv_v_;
+        int upper_hsv_h_;
+        int upper_hsv_s_;
+        int upper_hsv_v_;
         double k_bias_;
         double length_bias_;
         double min_area_thresh_;
         double max_area_thresh_;
+        double roi_nonzero_percent_;
         cv::Mat camera_matrix_;
         cv::Mat distortion_coefficients_;
         cv::Mat rvec_;

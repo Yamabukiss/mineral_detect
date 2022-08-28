@@ -67,9 +67,13 @@ namespace mineral_detect {
             for( int  j= 0; j < 4; j++ ){
                 if(chooseRect(min_area_rect_points[0],min_area_rect_points[1],min_area_rect_points[3]))
                 {
-                    cv::line(mor_img, min_area_rect_points[j], min_area_rect_points[(j + 1) % 4], cv::Scalar(255), 2,cv::LINE_AA);
-                    point_x_vector.push_back(min_area_rect_points[j].x);
-                    point_y_vector.push_back(min_area_rect_points[j].y);
+                    cv::Rect rect_to_color_select(min_area_rect_points[0],min_area_rect_points[2]);
+                    if(rectColorChoose(rect_to_color_select))
+                    {
+                        cv::line(mor_img, min_area_rect_points[j], min_area_rect_points[(j + 1) % 4], cv::Scalar(255), 2,cv::LINE_AA);
+                        point_x_vector.push_back(min_area_rect_points[j].x);
+                        point_y_vector.push_back(min_area_rect_points[j].y);
+                    }
                 }
                 else break;
             }
@@ -140,7 +144,24 @@ namespace mineral_detect {
             return {middle_x,middle_y};
         }
 
-        void Detector::dynamicCallback(mineral_detect::dynamicConfig &config) {
+    bool Detector::rectColorChoose(const cv::Rect &rect)
+    {
+        cv::Mat roi_rect = cv_image_->image(rect);
+        cv::Mat binary_roi_rect;
+        cv::inRange(roi_rect,cv::Scalar(lower_hsv_h_,lower_hsv_s_,lower_hsv_v_),cv::Scalar(upper_hsv_h_,upper_hsv_s_,upper_hsv_v_),binary_roi_rect);
+        int num_non_zero_pixel=cv::countNonZero(binary_roi_rect);
+        if(num_non_zero_pixel>0)
+        {
+            double roi_percent=(double)num_non_zero_pixel/rect.area();
+            if(roi_percent>roi_nonzero_percent_) return true;
+            else return false;
+        }
+        else return false;
+
+    }
+
+
+    void Detector::dynamicCallback(mineral_detect::dynamicConfig &config) {
             morph_type_ = config.morph_type;
             morph_iterations_ = config.morph_iterations;
             thresh1_ = config.canny_thresh1;
@@ -149,6 +170,13 @@ namespace mineral_detect {
             length_bias_=config.length_bias;
             min_area_thresh_=config.min_area_thresh;
             max_area_thresh_=config.max_area_thresh;
+            lower_hsv_h_=config.lower_hsv_h;
+            lower_hsv_s_=config.lower_hsv_s;
+            lower_hsv_v_=config.lower_hsv_v;
+            upper_hsv_h_=config.upper_hsv_h;
+            upper_hsv_s_=config.upper_hsv_s;
+            upper_hsv_v_=config.upper_hsv_v;
+            roi_nonzero_percent_=config.roi_nonzero_percent;
         }
 
         Detector::~Detector()=default;
