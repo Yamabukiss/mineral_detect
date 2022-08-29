@@ -36,8 +36,9 @@ namespace mineral_detect {
         }
 
         subscriber_ = nh_.subscribe("/usb_cam/image_raw", 1, &Detector::receiveFromCam, this);
-        publisher_ = nh_.advertise<sensor_msgs::Image>("image_publisher", 1);
-        publisher2_ = nh_.advertise<sensor_msgs::Image>("image_publisher2", 1);
+        binary_publisher_ = nh_.advertise<sensor_msgs::Image>("binary_publisher", 1);
+        hsv_publisher_ = nh_.advertise<sensor_msgs::Image>("hsv_publisher", 1);
+        direction_publisher_=nh_.advertise<std_msgs::String>("direction_publisher",1);
         callback_ = boost::bind(&Detector::dynamicCallback, this, _1);
         server_.setCallback(callback_);
     }
@@ -49,7 +50,7 @@ namespace mineral_detect {
         cv::cvtColor(origin_img,hsv_img,cv::COLOR_BGR2HSV);
         cv::Mat bin_img;
         cv::inRange(hsv_img,cv::Scalar(lower_hsv_h_,lower_hsv_s_,lower_hsv_v_),cv::Scalar(upper_hsv_h_,upper_hsv_s_,upper_hsv_v_),bin_img);
-        publisher2_.publish(cv_bridge::CvImage(std_msgs::Header(), "mono8", bin_img).toImageMsg());
+        hsv_publisher_.publish(cv_bridge::CvImage(std_msgs::Header(), "mono8", bin_img).toImageMsg());
         cv::Mat gray_img;
         cv::cvtColor(origin_img, gray_img, CV_BGR2GRAY);
         cv::Mat gauss_img;
@@ -102,7 +103,7 @@ namespace mineral_detect {
             cv::circle(mor_img, center_point, 10, cv::Scalar(255), 2);
         }
 
-        publisher_.publish(cv_bridge::CvImage(std_msgs::Header(), "mono8", mor_img).toImageMsg());
+        binary_publisher_.publish(cv_bridge::CvImage(std_msgs::Header(), "mono8", mor_img).toImageMsg());
         }
 
         bool Detector::chooseRect(const cv::Point2f &point1, const cv::Point2f &point2,const cv::Point2f &point3)
@@ -184,11 +185,34 @@ namespace mineral_detect {
             points_x_sum+=rect_middle_points_vector[i].x;
             points_y_sum+=rect_middle_points_vector[i].y;
         }
-        if(points_x_sum<2*biggest_x_&&points_y_sum<2*biggest_y_) std::cout<<"br"<<std::endl;
-        else if(points_x_sum<2*biggest_x_&&points_y_sum>2*biggest_y_) std::cout<<"tr"<<std::endl;
-        else if(points_x_sum>2*biggest_x_&&points_y_sum>2*biggest_y_) std::cout<<"tl"<<std::endl;
-        else if(points_x_sum>2*biggest_x_&&points_y_sum<2*biggest_y_) std::cout<<"bl"<<std::endl;
-        else std::cout<<"can not judge the direction"<<std::endl;
+        std_msgs::String msg;
+        std::stringstream ss;
+
+        if(points_x_sum<2*biggest_x_&&points_y_sum<2*biggest_y_)
+        {
+            ss <<"br";
+            msg.data = ss.str();
+            direction_publisher_.publish(msg);
+        }
+        else if(points_x_sum<2*biggest_x_&&points_y_sum>2*biggest_y_)
+        {
+            ss <<"tr";
+            msg.data = ss.str();
+            direction_publisher_.publish(msg);
+        }
+
+        else if(points_x_sum>2*biggest_x_&&points_y_sum>2*biggest_y_)
+        {
+            ss <<"tl";
+            msg.data = ss.str();
+            direction_publisher_.publish(msg);
+        }
+
+        {
+            ss <<"bl";
+            msg.data = ss.str();
+            direction_publisher_.publish(msg);
+        }
     }
 
     void Detector::dynamicCallback(mineral_detect::dynamicConfig &config) {

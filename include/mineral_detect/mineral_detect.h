@@ -1,6 +1,7 @@
 #pragma once
 
 #include <sensor_msgs/Image.h>
+#include "std_msgs/String.h"
 #include <algorithm>
 #include "ros/ros.h"
 #include <cv_bridge/cv_bridge.h>
@@ -57,8 +58,9 @@ namespace mineral_detect
         dynamic_reconfigure::Server<mineral_detect::dynamicConfig>::CallbackType callback_;
 
         ros::NodeHandle nh_;
-        ros::Publisher publisher_;
-        ros::Publisher publisher2_;
+        ros::Publisher binary_publisher_;
+        ros::Publisher hsv_publisher_;
+        ros::Publisher direction_publisher_;
         ros::Subscriber subscriber_;
     };
 }
