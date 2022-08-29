@@ -65,14 +65,14 @@ namespace mineral_detect {
         cv::Point2f min_area_rect_points[4];
         std::vector<float> point_x_vector;
         std::vector<float> point_y_vector;
+        std::vector<cv::Point2f> rect_middle_points_vector;
         for (int i = 0; i < contours.size(); ++i)
         {
             cv::RotatedRect min_area_rect = cv::minAreaRect(cv::Mat(contours[i]));
             min_area_rect.points(min_area_rect_points);
-            for( int  j= 0; j < 4; j++ ){
+
                 if(chooseRect(min_area_rect_points[0],min_area_rect_points[1],min_area_rect_points[3]))
                 {
-
                     cv::Rect rect_to_color_select(min_area_rect_points[0],min_area_rect_points[2]);
                     if (rect_to_color_select.tl().x<0) rect_to_color_select.x=0;
                     else if (rect_to_color_select.br().x>cv_image_->image.cols-1) rect_to_color_select.x=cv_image_->image.cols-1-rect_to_color_select.width;
@@ -81,18 +81,21 @@ namespace mineral_detect {
 
                     if(rectColorChoose(rect_to_color_select))
                     {
+                        rect_middle_points_vector.emplace_back(cv::Point2f ((float)rect_to_color_select.tl().x+((float)rect_to_color_select.width/2),(float)rect_to_color_select.tl().y+((float)rect_to_color_select.height/2)));
+                        for( int  j= 0; j < 4; j++ ){
                         cv::line(mor_img, min_area_rect_points[j], min_area_rect_points[(j + 1) % 4], cv::Scalar(255), 2,cv::LINE_AA);
                         point_x_vector.push_back(min_area_rect_points[j].x);
                         point_y_vector.push_back(min_area_rect_points[j].y);
                     }
-                }
-                else break;
-            }
+                } else continue;
+            } else continue;
         }
-        if(!point_x_vector.empty())
+        if(!point_x_vector.empty()&&rect_middle_points_vector.size()==3)
+//        if(!point_x_vector.empty())
         {
             std::vector<cv::Point2f> coordinate_vec2d;
             cv::Point2f center_point = getMiddlePoint(point_x_vector, point_y_vector,coordinate_vec2d);
+            getDirection(rect_middle_points_vector);
             cv::line(mor_img,coordinate_vec2d[0],coordinate_vec2d[1],cv::Scalar(255));
             cv::line(mor_img,coordinate_vec2d[0],coordinate_vec2d[2],cv::Scalar(255));
             cv::line(mor_img,coordinate_vec2d[0],coordinate_vec2d[3],cv::Scalar(255));
@@ -121,6 +124,8 @@ namespace mineral_detect {
             float biggest_y=*std::max_element(std::begin(point_y_vector),std::end(point_y_vector));
             float smallest_x=*std::min_element(std::begin(point_x_vector), std::end(point_x_vector));
             float smallest_y=*std::min_element(std::begin(point_y_vector),std::end(point_y_vector));
+            biggest_x_=biggest_x;
+            biggest_y_=biggest_y;
 
             std::vector<cv::Point2f> corner_point2d_vec;
             corner_point2d_vec.emplace_back(smallest_x,smallest_y);
@@ -136,10 +141,10 @@ namespace mineral_detect {
             cv::solvePnP(corner_point3d_vec,corner_point2d_vec,camera_matrix_,distortion_coefficients_,rvec_,tvec_);
 
             std::vector<cv::Point3f> coordinate_vec3d;
-            coordinate_vec3d.emplace_back(0, 0, 0);
-            coordinate_vec3d.emplace_back(50, 0, 0);
-            coordinate_vec3d.emplace_back(0, 50, 0);
-            coordinate_vec3d.emplace_back(0, 0, 50);
+            coordinate_vec3d.emplace_back(0, 75, 75);
+            coordinate_vec3d.emplace_back(50, 75, 75);
+            coordinate_vec3d.emplace_back(0, 125, 75);
+            coordinate_vec3d.emplace_back(0, 75, 125);
             cv::projectPoints(coordinate_vec3d,rvec_,tvec_,camera_matrix_,distortion_coefficients_,coordinate_vec2d);
 
             float middle_x=smallest_x+(biggest_x-smallest_x)/2;
@@ -170,6 +175,21 @@ namespace mineral_detect {
 
     }
 
+    void Detector::getDirection(const std::vector<cv::Point2f> &rect_middle_points_vector)
+    {
+        float points_x_sum=0;
+        float points_y_sum=0;
+        for(int i=0;i<rect_middle_points_vector.size();i++)
+        {
+            points_x_sum+=rect_middle_points_vector[i].x;
+            points_y_sum+=rect_middle_points_vector[i].y;
+        }
+        if(points_x_sum<2*biggest_x_&&points_y_sum<2*biggest_y_) std::cout<<"br"<<std::endl;
+        else if(points_x_sum<2*biggest_x_&&points_y_sum>2*biggest_y_) std::cout<<"tr"<<std::endl;
+        else if(points_x_sum>2*biggest_x_&&points_y_sum>2*biggest_y_) std::cout<<"tl"<<std::endl;
+        else if(points_x_sum>2*biggest_x_&&points_y_sum<2*biggest_y_) std::cout<<"bl"<<std::endl;
+        else std::cout<<"can not judge the direction"<<std::endl;
+    }
 
     void Detector::dynamicCallback(mineral_detect::dynamicConfig &config) {
             morph_type_ = config.morph_type;

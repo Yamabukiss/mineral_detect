@@ -29,8 +29,9 @@ namespace mineral_detect
 
         cv::Point2f getMiddlePoint(const std::vector<float> &point_x_vector,const std::vector<float> &point_y_vector,std::vector<cv::Point2f> &coordinate_vec2d);
 
-        cv_bridge::CvImagePtr cv_image_;
+        void getDirection(const std::vector<cv::Point2f> &rect_middle_points_vector);
 
+        cv_bridge::CvImagePtr cv_image_;
         int morph_type_;
         int morph_iterations_;
         int thresh1_;
@@ -46,6 +47,8 @@ namespace mineral_detect
         double min_area_thresh_;
         double max_area_thresh_;
         double roi_nonzero_percent_;
+        float biggest_x_;
+        float biggest_y_;
         cv::Mat camera_matrix_;
         cv::Mat distortion_coefficients_;
         cv::Mat rvec_;
