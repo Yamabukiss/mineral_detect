@@ -67,6 +67,7 @@ namespace mineral_detect {
         std::vector<float> point_x_vector;
         std::vector<float> point_y_vector;
         std::vector<cv::Point2f> rect_middle_points_vector;
+        std::vector<cv::Rect> rect_vector;
         for (int i = 0; i < contours.size(); ++i)
         {
             cv::RotatedRect min_area_rect = cv::minAreaRect(cv::Mat(contours[i]));
@@ -83,6 +84,7 @@ namespace mineral_detect {
                     if(rectColorChoose(rect_to_color_select))
                     {
                         rect_middle_points_vector.emplace_back(cv::Point2f ((float)rect_to_color_select.tl().x+((float)rect_to_color_select.width/2),(float)rect_to_color_select.tl().y+((float)rect_to_color_select.height/2)));
+                        rect_vector.emplace_back(rect_to_color_select);
                         for( int  j= 0; j < 4; j++ ){
                         cv::line(mor_img, min_area_rect_points[j], min_area_rect_points[(j + 1) % 4], cv::Scalar(255), 2,cv::LINE_AA);
                         point_x_vector.push_back(min_area_rect_points[j].x);
@@ -96,7 +98,7 @@ namespace mineral_detect {
         {
             std::vector<cv::Point2f> coordinate_vec2d;
             cv::Point2f center_point = getMiddlePoint(point_x_vector, point_y_vector,coordinate_vec2d);
-            getDirection(rect_middle_points_vector);
+            getDirection(rect_middle_points_vector,rect_vector);
             cv::line(mor_img,coordinate_vec2d[0],coordinate_vec2d[1],cv::Scalar(255));
             cv::line(mor_img,coordinate_vec2d[0],coordinate_vec2d[2],cv::Scalar(255));
             cv::line(mor_img,coordinate_vec2d[0],coordinate_vec2d[3],cv::Scalar(255));
@@ -125,8 +127,6 @@ namespace mineral_detect {
             float biggest_y=*std::max_element(std::begin(point_y_vector),std::end(point_y_vector));
             float smallest_x=*std::min_element(std::begin(point_x_vector), std::end(point_x_vector));
             float smallest_y=*std::min_element(std::begin(point_y_vector),std::end(point_y_vector));
-            biggest_x_=biggest_x;
-            biggest_y_=biggest_y;
 
             std::vector<cv::Point2f> corner_point2d_vec;
             corner_point2d_vec.emplace_back(smallest_x,smallest_y);
@@ -176,44 +176,74 @@ namespace mineral_detect {
 
     }
 
-    void Detector::getDirection(const std::vector<cv::Point2f> &rect_middle_points_vector)
+    void Detector::getDirection(const std::vector<cv::Point2f> &rect_middle_points_vector,const std::vector<cv::Rect> &rect_vector)
     {
-        float points_x_sum=0;
-        float points_y_sum=0;
+        std::vector<float> center_x_vector;
+        std::vector<float> center_y_vector;
         for(int i=0;i<rect_middle_points_vector.size();i++)
         {
-            points_x_sum+=rect_middle_points_vector[i].x;
-            points_y_sum+=rect_middle_points_vector[i].y;
+            center_x_vector.emplace_back(rect_middle_points_vector[i].x);
+            center_y_vector.emplace_back(rect_middle_points_vector[i].y);
         }
+        std::sort(center_x_vector.begin(),center_x_vector.end());
+        std::sort(center_y_vector.begin(),center_y_vector.end());
         std_msgs::String msg;
         std::stringstream ss;
+        int counter=0;
+        for(int i=0;i<rect_vector.size();i++)
+        {
+            if (!rect_vector[i].contains(cv::Point2f(center_x_vector[2], center_y_vector[2]))) {
+                counter++;
+                if (counter == 3) {
+                    ss << "br";
+                    msg.data = ss.str();
+                    direction_publisher_.publish(msg);
+                    return;
+                }
+            }
+        }
+        counter=0;
+        for(int i=0;i<rect_vector.size();i++)
+        {
+            if (!rect_vector[i].contains(cv::Point2f(center_x_vector[2], center_y_vector[0]))) {
+                counter++;
+                if (counter == 3) {
+                    ss << "tr";
+                    msg.data = ss.str();
+                    direction_publisher_.publish(msg);
+                    return;
+                }
+            }
+        }
+        counter=0;
+        for(int i=0;i<rect_vector.size();i++)
+        {
+            if (!rect_vector[i].contains(cv::Point2f(center_x_vector[0], center_y_vector[0]))) {
+                counter++;
+                if (counter == 3) {
+                    ss << "tl";
+                    msg.data = ss.str();
+                    direction_publisher_.publish(msg);
+                    return;
+                }
+            }
+        }
+        counter=0;
+        for(int i=0;i<rect_vector.size();i++)
+        {
+            if (!rect_vector[i].contains(cv::Point2f(center_x_vector[0], center_y_vector[2]))) {
+                counter++;
+                if (counter == 3) {
+                    ss << "bl";
+                    msg.data = ss.str();
+                    direction_publisher_.publish(msg);
+                    return;
+                }
+            }
+        }
 
-        if(points_x_sum<2*biggest_x_&&points_y_sum<2*biggest_y_)
-        {
-            ss <<"br";
-            msg.data = ss.str();
-            direction_publisher_.publish(msg);
-        }
-        else if(points_x_sum<2*biggest_x_&&points_y_sum>2*biggest_y_)
-        {
-            ss <<"tr";
-            msg.data = ss.str();
-            direction_publisher_.publish(msg);
-        }
-
-        else if(points_x_sum>2*biggest_x_&&points_y_sum>2*biggest_y_)
-        {
-            ss <<"tl";
-            msg.data = ss.str();
-            direction_publisher_.publish(msg);
-        }
-
-        {
-            ss <<"bl";
-            msg.data = ss.str();
-            direction_publisher_.publish(msg);
-        }
     }
+
 
     void Detector::dynamicCallback(mineral_detect::dynamicConfig &config) {
             morph_type_ = config.morph_type;
