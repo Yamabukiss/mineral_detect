@@ -83,13 +83,17 @@ namespace mineral_detect {
 
                     if(rectColorChoose(rect_to_color_select))
                     {
-                        rect_middle_points_vector.emplace_back(cv::Point2f ((float)rect_to_color_select.tl().x+((float)rect_to_color_select.width/2),(float)rect_to_color_select.tl().y+((float)rect_to_color_select.height/2)));
-                        rect_vector.emplace_back(rect_to_color_select);
-                        for( int  j= 0; j < 4; j++ ){
-                        cv::line(mor_img, min_area_rect_points[j], min_area_rect_points[(j + 1) % 4], cv::Scalar(255), 2,cv::LINE_AA);
-                        point_x_vector.push_back(min_area_rect_points[j].x);
-                        point_y_vector.push_back(min_area_rect_points[j].y);
-                    }
+                        if(cv::contourArea(contours[i])/rect_to_color_select.area()>=contours_ratio_)
+                        {
+                            rect_middle_points_vector.emplace_back(cv::Point2f ((float)rect_to_color_select.tl().x+((float)rect_to_color_select.width/2),(float)rect_to_color_select.tl().y+((float)rect_to_color_select.height/2)));
+                            rect_vector.emplace_back(rect_to_color_select);
+                            for( int  j= 0; j < 4; j++ )
+                            {
+                                cv::line(mor_img, min_area_rect_points[j], min_area_rect_points[(j + 1) % 4], cv::Scalar(255), 2,cv::LINE_AA);
+                                point_x_vector.push_back(min_area_rect_points[j].x);
+                                point_y_vector.push_back(min_area_rect_points[j].y);
+                            }
+                        } else continue;
                 } else continue;
             } else continue;
         }
@@ -261,6 +265,7 @@ namespace mineral_detect {
             upper_hsv_s_=config.upper_hsv_s;
             upper_hsv_v_=config.upper_hsv_v;
             roi_nonzero_percent_=config.roi_nonzero_percent;
+            contours_ratio_=config.contours_ratio;
         }
 
         Detector::~Detector()=default;

@@ -43,6 +43,7 @@ namespace mineral_detect
         int upper_hsv_h_;
         int upper_hsv_s_;
         int upper_hsv_v_;
+        double contours_ratio_;
         double k_bias_;
         double length_bias_;
         double min_area_thresh_;
