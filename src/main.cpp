@@ -128,13 +128,6 @@ namespace mineral_detect {
             corner_point2d_vec.emplace_back(biggest_x,biggest_y);
             corner_point2d_vec.emplace_back(smallest_x,biggest_y);
 
-//            cv::Mat pointed_img=cv_image_->image.clone();
-//            cv::circle(pointed_img, corner_point2d_vec[0], 10, cv::Scalar(255,0,0), 2);
-//            cv::circle(pointed_img, corner_point2d_vec[1], 10, cv::Scalar(255,0,0), 2);
-//            cv::circle(pointed_img, corner_point2d_vec[2], 10, cv::Scalar(255,0,0), 2);
-//            cv::circle(pointed_img, corner_point2d_vec[3], 10, cv::Scalar(255,0,0), 2);
-//            publisher2_.publish(cv_bridge::CvImage(std_msgs::Header(), cv_image_->encoding, pointed_img).toImageMsg());
-
             std::vector<cv::Point3f> corner_point3d_vec;
             corner_point3d_vec.emplace_back(0,0,150);
             corner_point3d_vec.emplace_back(0,150,150);
