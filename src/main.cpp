@@ -45,6 +45,11 @@ namespace mineral_detect {
     void Detector::receiveFromCam(const sensor_msgs::ImageConstPtr &image) {
         cv_image_ = boost::make_shared<cv_bridge::CvImage>(*cv_bridge::toCvShare(image, image->encoding));
         cv::Mat origin_img = cv_image_->image.clone();
+        cv::Mat hsv_img;
+        cv::cvtColor(origin_img,hsv_img,cv::COLOR_BGR2HSV);
+        cv::Mat bin_img;
+        cv::inRange(hsv_img,cv::Scalar(lower_hsv_h_,lower_hsv_s_,lower_hsv_v_),cv::Scalar(upper_hsv_h_,upper_hsv_s_,upper_hsv_v_),bin_img);
+        publisher2_.publish(cv_bridge::CvImage(std_msgs::Header(), "mono8", bin_img).toImageMsg());
         cv::Mat gray_img;
         cv::cvtColor(origin_img, gray_img, CV_BGR2GRAY);
         cv::Mat gauss_img;
@@ -67,7 +72,13 @@ namespace mineral_detect {
             for( int  j= 0; j < 4; j++ ){
                 if(chooseRect(min_area_rect_points[0],min_area_rect_points[1],min_area_rect_points[3]))
                 {
+
                     cv::Rect rect_to_color_select(min_area_rect_points[0],min_area_rect_points[2]);
+                    if (rect_to_color_select.tl().x<0) rect_to_color_select.x=0;
+                    else if (rect_to_color_select.br().x>cv_image_->image.cols-1) rect_to_color_select.x=cv_image_->image.cols-1-rect_to_color_select.width;
+                    if (rect_to_color_select.tl().y<0) rect_to_color_select.y=0;
+                    else if (rect_to_color_select.br().y>cv_image_->image.rows-1) rect_to_color_select.y=cv_image_->image.rows-1-rect_to_color_select.height;
+
                     if(rectColorChoose(rect_to_color_select))
                     {
                         cv::line(mor_img, min_area_rect_points[j], min_area_rect_points[(j + 1) % 4], cv::Scalar(255), 2,cv::LINE_AA);
@@ -117,12 +128,12 @@ namespace mineral_detect {
             corner_point2d_vec.emplace_back(biggest_x,biggest_y);
             corner_point2d_vec.emplace_back(smallest_x,biggest_y);
 
-            cv::Mat pointed_img=cv_image_->image.clone();
-            cv::circle(pointed_img, corner_point2d_vec[0], 10, cv::Scalar(255,0,0), 2);
-            cv::circle(pointed_img, corner_point2d_vec[1], 10, cv::Scalar(255,0,0), 2);
-            cv::circle(pointed_img, corner_point2d_vec[2], 10, cv::Scalar(255,0,0), 2);
-            cv::circle(pointed_img, corner_point2d_vec[3], 10, cv::Scalar(255,0,0), 2);
-            publisher2_.publish(cv_bridge::CvImage(std_msgs::Header(), cv_image_->encoding, pointed_img).toImageMsg());
+//            cv::Mat pointed_img=cv_image_->image.clone();
+//            cv::circle(pointed_img, corner_point2d_vec[0], 10, cv::Scalar(255,0,0), 2);
+//            cv::circle(pointed_img, corner_point2d_vec[1], 10, cv::Scalar(255,0,0), 2);
+//            cv::circle(pointed_img, corner_point2d_vec[2], 10, cv::Scalar(255,0,0), 2);
+//            cv::circle(pointed_img, corner_point2d_vec[3], 10, cv::Scalar(255,0,0), 2);
+//            publisher2_.publish(cv_bridge::CvImage(std_msgs::Header(), cv_image_->encoding, pointed_img).toImageMsg());
 
             std::vector<cv::Point3f> corner_point3d_vec;
             corner_point3d_vec.emplace_back(0,0,150);
@@ -147,13 +158,19 @@ namespace mineral_detect {
     bool Detector::rectColorChoose(const cv::Rect &rect)
     {
         cv::Mat roi_rect = cv_image_->image(rect);
-        cv::Mat binary_roi_rect;
-        cv::inRange(roi_rect,cv::Scalar(lower_hsv_h_,lower_hsv_s_,lower_hsv_v_),cv::Scalar(upper_hsv_h_,upper_hsv_s_,upper_hsv_v_),binary_roi_rect);
-        int num_non_zero_pixel=cv::countNonZero(binary_roi_rect);
-        if(num_non_zero_pixel>0)
+        cv::Mat roi_hsv_rect;
+        if(!roi_rect.empty())
         {
-            double roi_percent=(double)num_non_zero_pixel/rect.area();
-            if(roi_percent>roi_nonzero_percent_) return true;
+            cv::cvtColor(roi_rect,roi_hsv_rect,cv::COLOR_BGR2HSV);
+            cv::Mat roi_binary_rect;
+            cv::inRange(roi_hsv_rect,cv::Scalar(lower_hsv_h_,lower_hsv_s_,lower_hsv_v_),cv::Scalar(upper_hsv_h_,upper_hsv_s_,upper_hsv_v_),roi_binary_rect);
+            int num_non_zero_pixel=cv::countNonZero(roi_binary_rect);
+            if(num_non_zero_pixel>0)
+            {
+                double roi_percent=(double)num_non_zero_pixel/rect.area();
+                if(roi_percent>roi_nonzero_percent_) return true;
+                else return false;
+            }
             else return false;
         }
         else return false;
