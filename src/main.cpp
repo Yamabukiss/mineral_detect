@@ -98,7 +98,6 @@ namespace mineral_detect {
             } else continue;
         }
         if(!point_x_vector.empty()&&rect_middle_points_vector.size()==3)
-//        if(!point_x_vector.empty())
         {
             std::vector<cv::Point2f> coordinate_vec2d;
             cv::Point2f center_point = getMiddlePoint(point_x_vector, point_y_vector,coordinate_vec2d);
@@ -177,7 +176,6 @@ namespace mineral_detect {
             else return false;
         }
         else return false;
-
     }
 
     void Detector::getDirection(const std::vector<cv::Point2f> &rect_middle_points_vector,const std::vector<cv::Rect> &rect_vector)

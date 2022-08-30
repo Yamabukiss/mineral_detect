@@ -49,17 +49,12 @@ namespace mineral_detect
         double min_area_thresh_;
         double max_area_thresh_;
         double roi_nonzero_percent_;
-        float biggest_center_point_x_;
-        float biggest_center_point_y_;
-        float smallest_center_point_x_;
-        float smallest_center_point_y_;
         cv::Mat camera_matrix_;
         cv::Mat distortion_coefficients_;
         cv::Mat rvec_;
         cv::Mat tvec_;
         dynamic_reconfigure::Server<mineral_detect::dynamicConfig> server_;
         dynamic_reconfigure::Server<mineral_detect::dynamicConfig>::CallbackType callback_;
-
         ros::NodeHandle nh_;
         ros::Publisher binary_publisher_;
         ros::Publisher hsv_publisher_;
