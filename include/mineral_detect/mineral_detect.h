@@ -24,19 +24,17 @@ namespace mineral_detect
 
         void dynamicCallback(mineral_detect::dynamicConfig& config);
 
-        bool chooseRect(const cv::Point2f &point1, const cv::Point2f &point2,const cv::Point2f &point3);
+        bool chooseRect(const cv::Rect &rect);
 
         bool rectColorChoose(const cv::Rect &rect);
 
         cv::Point2f getMiddlePoint(const std::vector<float> &point_x_vector,const std::vector<float> &point_y_vector,std::vector<cv::Point2f> &coordinate_vec2d);
 
-        void getDirection(const std::vector<cv::Point2f> &rect_middle_points_vector,const std::vector<cv::Rect> &rect_vector);
-
         cv_bridge::CvImagePtr cv_image_;
         int morph_type_;
         int morph_iterations_;
-        int thresh1_;
-        int thresh2_;
+//        int thresh1_;
+//        int thresh2_;
         int lower_hsv_h_;
         int lower_hsv_s_;
         int lower_hsv_v_;
@@ -44,10 +42,10 @@ namespace mineral_detect
         int upper_hsv_s_;
         int upper_hsv_v_;
         double contours_ratio_;
-        double k_bias_;
-        double length_bias_;
+//        double k_bias_;
+//        double length_bias_;
         double min_area_thresh_;
-        double max_area_thresh_;
+//        double max_area_thresh_;
         double roi_nonzero_percent_;
         cv::Mat camera_matrix_;
         cv::Mat distortion_coefficients_;
