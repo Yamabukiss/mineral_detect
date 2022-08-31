@@ -38,7 +38,7 @@ namespace mineral_detect {
         subscriber_ = nh_.subscribe("/usb_cam/image_raw", 1, &Detector::receiveFromCam, this);
         test_publisher_ = nh_.advertise<sensor_msgs::Image>("test_publisher", 1);
         hsv_publisher_ = nh_.advertise<sensor_msgs::Image>("hsv_publisher", 1);
-        direction_publisher_=nh_.advertise<std_msgs::String>("direction_publisher",1);
+        point_publisher_=nh_.advertise<std_msgs::Float32MultiArray>("point_publisher",1);
         callback_ = boost::bind(&Detector::dynamicCallback, this, _1);
         server_.setCallback(callback_);
     }
@@ -94,6 +94,10 @@ namespace mineral_detect {
                                 cv::line(cv_image_->image,coordinate_vec2d[0],coordinate_vec2d[3],cv::Scalar(255,0,0));
                                 cv::circle(cv_image_->image, center_point, 10, cv::Scalar(0,255,0), 5);
                                 cv::circle(cv_image_->image, middle_point, 10, cv::Scalar(0,0,255), 5);
+                                std_msgs::Float32MultiArray middle_point_array;
+                                middle_point_array.data.push_back((float)middle_point.x);
+                                middle_point_array.data.push_back((float)middle_point.y);
+                                point_publisher_.publish(middle_point_array);
                                 point_x_vector.clear();
                                 point_y_vector.clear();
                             }
@@ -111,7 +115,7 @@ namespace mineral_detect {
             {
                         return true;
             }
-                else return false;
+            return false;
         }
 
         cv::Point2f Detector::getMiddlePoint(const std::vector<float> &point_x_vector,const std::vector<float> &point_y_vector,std::vector<cv::Point2f> &coordinate_vec2d)

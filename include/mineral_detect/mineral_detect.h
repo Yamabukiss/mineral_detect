@@ -10,6 +10,7 @@
 #include <pluginlib/class_list_macros.h>
 #include "dynamic_reconfigure/server.h"
 #include "mineral_detect/dynamicConfig.h"
+#include "std_msgs/Float32MultiArray.h"
 namespace mineral_detect
 {
     class Detector : public nodelet::Nodelet {
@@ -55,7 +56,7 @@ namespace mineral_detect
         ros::NodeHandle nh_;
         ros::Publisher test_publisher_;
         ros::Publisher hsv_publisher_;
-        ros::Publisher direction_publisher_;
+        ros::Publisher point_publisher_;
         ros::Subscriber subscriber_;
     };
 }
