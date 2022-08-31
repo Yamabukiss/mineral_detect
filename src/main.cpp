@@ -87,11 +87,13 @@ namespace mineral_detect {
                             {
                                 std::vector<cv::Point2f> coordinate_vec2d;
                                 cv::Point2f center_point = getMiddlePoint(point_x_vector, point_y_vector,coordinate_vec2d);
-                                middlePointCompention(center_point,rect_to_color_select);
+                                cv::Rect compentioned_rect=middlePointCompention(rect_to_color_select);
+                                cv::Point2i middle_point(compentioned_rect.x+compentioned_rect.width/2,compentioned_rect.y+compentioned_rect.height/2);
                                 cv::line(cv_image_->image,coordinate_vec2d[0],coordinate_vec2d[1],cv::Scalar(255,0,0));
                                 cv::line(cv_image_->image,coordinate_vec2d[0],coordinate_vec2d[2],cv::Scalar(255,0,0));
                                 cv::line(cv_image_->image,coordinate_vec2d[0],coordinate_vec2d[3],cv::Scalar(255,0,0));
                                 cv::circle(cv_image_->image, center_point, 10, cv::Scalar(0,255,0), 5);
+                                cv::circle(cv_image_->image, middle_point, 10, cv::Scalar(0,0,255), 5);
                                 point_x_vector.clear();
                                 point_y_vector.clear();
                             }
@@ -166,13 +168,12 @@ namespace mineral_detect {
         else return false;
     }
 
-    cv::Point2f Detector::middlePointCompention(cv::Point2f &center_point,const cv::Rect &rect)
+    cv::Rect Detector::middlePointCompention(const cv::Rect &rect)
     {
-        float num1=(float)rect.br().y-center_point.y;
-        float num2=center_point.y-(float)rect.tl().y;
-        std::cout<<num1-num2<<std::endl;
-        std::cout<<"                                    "<<std::endl;
-        return center_point;
+        int bias=rect.height-rect.width;
+        cv::Rect new_rect(rect.x,rect.y,rect.width,rect.height-bias);
+        if(bias>=shape_bias_)   return new_rect;
+        else return rect;
     }
 
     void Detector::dynamicCallback(mineral_detect::dynamicConfig &config) {
@@ -188,6 +189,7 @@ namespace mineral_detect {
             roi_nonzero_percent_=config.roi_nonzero_percent;
             min_perimeter_area_ratio_=config.min_perimeter_area_ratio;
             max_perimeter_area_ratio_=config.max_perimeter_area_ratio;
+            shape_bias_=config.shape_bias;
         }
 
         Detector::~Detector()=default;

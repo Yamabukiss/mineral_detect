@@ -30,7 +30,7 @@ namespace mineral_detect
 
         cv::Point2f getMiddlePoint(const std::vector<float> &point_x_vector,const std::vector<float> &point_y_vector,std::vector<cv::Point2f> &coordinate_vec2d);
 
-        cv::Point2f middlePointCompention(cv::Point2f &center_point,const cv::Rect &rect);
+        cv::Rect middlePointCompention(const cv::Rect &rect);
 
         cv_bridge::CvImagePtr cv_image_;
         int morph_type_;
@@ -45,6 +45,7 @@ namespace mineral_detect
         double max_perimeter_area_ratio_;
         double min_area_thresh_;
         double roi_nonzero_percent_;
+        double shape_bias_;
         cv::Mat camera_matrix_;
         cv::Mat distortion_coefficients_;
         cv::Mat rvec_;
