@@ -76,8 +76,6 @@ namespace mineral_detect {
                     {
                         if(cv::arcLength(contours[i], true)/cv::contourArea(contours[i])>=min_perimeter_area_ratio_&&cv::arcLength(contours[i], true)/cv::contourArea(contours[i])<=max_perimeter_area_ratio_)
                         {
-                            std::cout<<cv::arcLength(contours[i], true)/cv::contourArea(contours[i])<<std::endl;
-                            std::cout<<"                                   "<<std::endl;
                             rect_vector.emplace_back(rect_to_color_select);
                             for( int  j= 0; j < 4; j++ )
                             {
@@ -89,10 +87,11 @@ namespace mineral_detect {
                             {
                                 std::vector<cv::Point2f> coordinate_vec2d;
                                 cv::Point2f center_point = getMiddlePoint(point_x_vector, point_y_vector,coordinate_vec2d);
+                                middlePointCompention(center_point,rect_to_color_select);
                                 cv::line(cv_image_->image,coordinate_vec2d[0],coordinate_vec2d[1],cv::Scalar(255,0,0));
                                 cv::line(cv_image_->image,coordinate_vec2d[0],coordinate_vec2d[2],cv::Scalar(255,0,0));
                                 cv::line(cv_image_->image,coordinate_vec2d[0],coordinate_vec2d[3],cv::Scalar(255,0,0));
-                                cv::circle(cv_image_->image, center_point, 10, cv::Scalar(255), 5);
+                                cv::circle(cv_image_->image, center_point, 10, cv::Scalar(0,255,0), 5);
                                 point_x_vector.clear();
                                 point_y_vector.clear();
                             }
@@ -165,6 +164,15 @@ namespace mineral_detect {
             else return false;
         }
         else return false;
+    }
+
+    cv::Point2f Detector::middlePointCompention(cv::Point2f &center_point,const cv::Rect &rect)
+    {
+        float num1=(float)rect.br().y-center_point.y;
+        float num2=center_point.y-(float)rect.tl().y;
+        std::cout<<num1-num2<<std::endl;
+        std::cout<<"                                    "<<std::endl;
+        return center_point;
     }
 
     void Detector::dynamicCallback(mineral_detect::dynamicConfig &config) {

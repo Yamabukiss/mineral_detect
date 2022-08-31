@@ -30,6 +30,8 @@ namespace mineral_detect
 
         cv::Point2f getMiddlePoint(const std::vector<float> &point_x_vector,const std::vector<float> &point_y_vector,std::vector<cv::Point2f> &coordinate_vec2d);
 
+        cv::Point2f middlePointCompention(cv::Point2f &center_point,const cv::Rect &rect);
+
         cv_bridge::CvImagePtr cv_image_;
         int morph_type_;
         int morph_iterations_;
