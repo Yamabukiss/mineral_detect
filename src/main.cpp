@@ -36,7 +36,7 @@ namespace mineral_detect {
         }
 
         subscriber_ = nh_.subscribe("/usb_cam/image_raw", 1, &Detector::receiveFromCam, this);
-        binary_publisher_ = nh_.advertise<sensor_msgs::Image>("binary_publisher", 1);
+        test_publisher_ = nh_.advertise<sensor_msgs::Image>("test_publisher", 1);
         hsv_publisher_ = nh_.advertise<sensor_msgs::Image>("hsv_publisher", 1);
         direction_publisher_=nh_.advertise<std_msgs::String>("direction_publisher",1);
         callback_ = boost::bind(&Detector::dynamicCallback, this, _1);
@@ -50,23 +50,16 @@ namespace mineral_detect {
         cv::cvtColor(origin_img,hsv_img,cv::COLOR_BGR2HSV);
         cv::Mat bin_img;
         cv::inRange(hsv_img,cv::Scalar(lower_hsv_h_,lower_hsv_s_,lower_hsv_v_),cv::Scalar(upper_hsv_h_,upper_hsv_s_,upper_hsv_v_),bin_img);
-        hsv_publisher_.publish(cv_bridge::CvImage(std_msgs::Header(), "mono8", bin_img).toImageMsg());
-//        cv::Mat gray_img;
-//        cv::cvtColor(origin_img, gray_img, CV_BGR2GRAY);
-//        cv::Mat gauss_img;
-//        cv::GaussianBlur(gray_img,gauss_img,cv::Size (3,3),0,0);
-//        cv::Mat canny_img;
-//        cv::Canny(gauss_img,canny_img,thresh1_,thresh2_,3, true);
         cv::Mat mor_img;
         cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3), cv::Point(-1, -1));
         cv::morphologyEx(bin_img,mor_img,morph_type_,kernel,cv::Point(-1,-1),morph_iterations_);
+        hsv_publisher_.publish(cv_bridge::CvImage(std_msgs::Header(), "mono8", mor_img).toImageMsg());
         std::vector< std::vector< cv::Point> > contours;
         cv::findContours(mor_img,contours,cv::RETR_EXTERNAL,CV_CHAIN_APPROX_SIMPLE);
         mor_img=cv::Scalar::all(0);
         cv::Point2f min_area_rect_points[4];
         std::vector<float> point_x_vector;
         std::vector<float> point_y_vector;
-//        std::vector<cv::Point2f> rect_middle_points_vector;
         std::vector<cv::Rect> rect_vector;
         for (int i = 0; i < contours.size(); ++i)
         {
@@ -79,17 +72,16 @@ namespace mineral_detect {
                     if (rect_to_color_select.br().x>cv_image_->image.cols-1) continue;
                     if (rect_to_color_select.tl().y<0) continue;
                     if (rect_to_color_select.br().y>cv_image_->image.rows-1) continue;
-//                    std::cout<<rect_to_color_select<<std::endl;
-//                    std::cout<<"shit"<<std::endl;
                     if(rectColorChoose(rect_to_color_select))
                     {
-                        if(cv::contourArea(contours[i])/rect_to_color_select.area()>=contours_ratio_)
+                        if(cv::arcLength(contours[i], true)/cv::contourArea(contours[i])>=min_perimeter_area_ratio_&&cv::arcLength(contours[i], true)/cv::contourArea(contours[i])<=max_perimeter_area_ratio_)
                         {
-//                            rect_middle_points_vector.emplace_back(cv::Point2f ((float)rect_to_color_select.tl().x+((float)rect_to_color_select.width/2),(float)rect_to_color_select.tl().y+((float)rect_to_color_select.height/2)));
+                            std::cout<<cv::arcLength(contours[i], true)/cv::contourArea(contours[i])<<std::endl;
+                            std::cout<<"                                   "<<std::endl;
                             rect_vector.emplace_back(rect_to_color_select);
                             for( int  j= 0; j < 4; j++ )
                             {
-                                cv::line(mor_img, min_area_rect_points[j], min_area_rect_points[(j + 1) % 4], cv::Scalar(255), 2,cv::LINE_AA);
+                                cv::line(cv_image_->image, min_area_rect_points[j], min_area_rect_points[(j + 1) % 4], cv::Scalar(255,0,0), 3,cv::LINE_AA);
                                 point_x_vector.push_back(min_area_rect_points[j].x);
                                 point_y_vector.push_back(min_area_rect_points[j].y);
                             }
@@ -97,27 +89,23 @@ namespace mineral_detect {
                             {
                                 std::vector<cv::Point2f> coordinate_vec2d;
                                 cv::Point2f center_point = getMiddlePoint(point_x_vector, point_y_vector,coordinate_vec2d);
-                                cv::line(mor_img,coordinate_vec2d[0],coordinate_vec2d[1],cv::Scalar(255));
-                                cv::line(mor_img,coordinate_vec2d[0],coordinate_vec2d[2],cv::Scalar(255));
-                                cv::line(mor_img,coordinate_vec2d[0],coordinate_vec2d[3],cv::Scalar(255));
-                                cv::circle(mor_img, center_point, 10, cv::Scalar(255), 2);
+                                cv::line(cv_image_->image,coordinate_vec2d[0],coordinate_vec2d[1],cv::Scalar(255,0,0));
+                                cv::line(cv_image_->image,coordinate_vec2d[0],coordinate_vec2d[2],cv::Scalar(255,0,0));
+                                cv::line(cv_image_->image,coordinate_vec2d[0],coordinate_vec2d[3],cv::Scalar(255,0,0));
+                                cv::circle(cv_image_->image, center_point, 10, cv::Scalar(255), 5);
+                                point_x_vector.clear();
+                                point_y_vector.clear();
                             }
                         } else continue;
                 } else continue;
             } else continue;
         }
 
-        binary_publisher_.publish(cv_bridge::CvImage(std_msgs::Header(), "mono8", mor_img).toImageMsg());
+        test_publisher_.publish(cv_bridge::CvImage(std_msgs::Header(), cv_image_->encoding, cv_image_->image).toImageMsg());
         }
 
         bool Detector::chooseRect(const cv::Rect &rect)
         {
-//            double subtract_x = abs(sqrt(pow(abs(point1.x-point3.x),2)+pow(abs(point1.y-point3.y),2)));
-//            double subtract_y = abs(sqrt(pow(abs(point1.x-point2.x),2)+pow(abs(point1.y-point2.y),2)));
-//            double k= abs(subtract_y/subtract_x);
-//            double area=subtract_y*subtract_x;
-//            if(k<=1+k_bias_&&k>=1-k_bias_&&subtract_x <= subtract_y + length_bias_ && subtract_x >= subtract_y - length_bias_&&area>=min_area_thresh_&&area<=max_area_thresh_)
-//            if(area>=min_area_thresh_&&area<=max_area_thresh_)
             if(rect.area()>=min_area_thresh_)
             {
                         return true;
@@ -182,12 +170,7 @@ namespace mineral_detect {
     void Detector::dynamicCallback(mineral_detect::dynamicConfig &config) {
             morph_type_ = config.morph_type;
             morph_iterations_ = config.morph_iterations;
-//            thresh1_ = config.canny_thresh1;
-//            thresh2_ = config.canny_thresh2;
-//            k_bias_=config.k_bias;
-//            length_bias_=config.length_bias;
             min_area_thresh_=config.min_area_thresh;
-//            max_area_thresh_=config.max_area_thresh;
             lower_hsv_h_=config.lower_hsv_h;
             lower_hsv_s_=config.lower_hsv_s;
             lower_hsv_v_=config.lower_hsv_v;
@@ -195,7 +178,8 @@ namespace mineral_detect {
             upper_hsv_s_=config.upper_hsv_s;
             upper_hsv_v_=config.upper_hsv_v;
             roi_nonzero_percent_=config.roi_nonzero_percent;
-            contours_ratio_=config.contours_ratio;
+            min_perimeter_area_ratio_=config.min_perimeter_area_ratio;
+            max_perimeter_area_ratio_=config.max_perimeter_area_ratio;
         }
 
         Detector::~Detector()=default;
