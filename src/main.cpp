@@ -1,4 +1,5 @@
 #include "mineral_detect/mineral_detect.h"
+/// the topic name is "/mineral_detect_node/point_publisher" ///
 namespace mineral_detect {
     Detector::Detector() = default;
 
