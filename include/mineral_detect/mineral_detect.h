@@ -25,6 +25,10 @@ namespace mineral_detect
 
         void dynamicCallback(mineral_detect::dynamicConfig& config);
 
+        bool flashProcess(cv::Point2i &mineral_point,cv::Rect &mineral,cv::Mat &gray_img);
+
+        int calculateGrayValue(cv::Rect & rect,cv::Mat &gray_img);
+
         bool chooseRect(const cv::Rect &rect);
 
         bool rectColorChoose(const cv::Rect &rect);
@@ -47,6 +51,12 @@ namespace mineral_detect
         double min_area_thresh_;
         double roi_nonzero_percent_;
         double shape_bias_;
+        double flash_counter_;
+        double flash_counter_thresh_;
+        double box_light_ratio_;
+        double light_rect_width_ratio_;
+        double light_rect_height_ratio_;
+        int dark_thresh_;
         cv::Mat camera_matrix_;
         cv::Mat distortion_coefficients_;
         cv::Mat rvec_;
@@ -57,6 +67,7 @@ namespace mineral_detect
         ros::Publisher test_publisher_;
         ros::Publisher hsv_publisher_;
         ros::Publisher point_publisher_;
+        ros::Publisher gray_publisher_;
         ros::Subscriber subscriber_;
     };
 }
