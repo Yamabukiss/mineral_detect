@@ -108,34 +108,35 @@ namespace mineral_detect {
         int light_y=mineral_point.y-int(box_light_ratio_*float((mineral_point.y-mineral.y)));
         if (light_y<0) light_y=0;
         cv::Point2i  light_middle_point=cv::Point2i (light_x,light_y);
-        cv::Rect light_rect;
-        light_rect.width=light_rect_width;
-        light_rect.height=light_rect_height;
-        light_rect.x=int(light_middle_point.x-light_rect_width/2);
-        light_rect.y=int(light_middle_point.y-light_rect_height/2);
+//        cv::Rect light_rect;
+//        light_rect.width=light_rect_width;
+//        light_rect.height=light_rect_height;
+//        light_rect.x=int(light_middle_point.x-light_rect_width/2);
+//        light_rect.y=int(light_middle_point.y-light_rect_height/2);
 
-        cv::rectangle(cv_image_->image,light_rect,cv::Scalar(255,0,0),3);
-        cv::circle(cv_image_->image, light_middle_point, 10, cv::Scalar(255,0,0), 5);
-        cv::rectangle(cv_image_->image,mineral,cv::Scalar(255,0,0),3);
-        cv::circle(cv_image_->image, mineral_point, 10, cv::Scalar(255,0,0), 5);
+//        cv::rectangle(cv_image_->image,light_rect,cv::Scalar(255,0,255),3);
+        cv::circle(cv_image_->image, light_middle_point, 10, cv::Scalar(255,0,255), 5);
+        cv::rectangle(cv_image_->image,mineral,cv::Scalar(255,0,255),3);
+        cv::circle(cv_image_->image, mineral_point, 10, cv::Scalar(255,0,255), 5);
 
         cv::Point2i arrow_base (mineral_point.x,mineral_point.y-int(arrow_base_ratio_*(mineral_point.y-light_middle_point.y)));
-        cv::line(cv_image_->image,light_middle_point,arrow_base,cv::Scalar(255,0,0),6);
+        cv::line(cv_image_->image,light_middle_point,arrow_base,cv::Scalar(255,0,255),6);
 
         cv::Point2i arrow_branch_base(mineral_point.x,int(arrow_branch_ratio_base_*arrow_base.y));
         cv::Point2i arrow_left(mineral_point.x-int(arrow_branch_ratio_base_x_*arrow_base.y),arrow_branch_base.y);
         cv::Point2i arrow_right(mineral_point.x+int(arrow_branch_ratio_base_x_*arrow_base.y),arrow_branch_base.y);
 
-        cv::line(cv_image_->image,arrow_left,arrow_base,cv::Scalar(255,0,0),6);
-        cv::line(cv_image_->image,arrow_right,arrow_base,cv::Scalar(255,0,0),6);
+        cv::line(cv_image_->image,arrow_left,arrow_base,cv::Scalar(255,0,255),6);
+        cv::line(cv_image_->image,arrow_right,arrow_base,cv::Scalar(255,0,255),6);
 
         int avg_pixel;
-        avg_pixel=calculateGrayValue(light_rect,gray_img);
-        std::cout<<"the light average gray pixel is :"<<avg_pixel<<std::endl; // 9 ~ 13
-        if (avg_pixel<dark_thresh_)
+//        avg_pixel=calculateGrayValue(light_rect,gray_img);
+        avg_pixel=gray_img.at<uchar>(light_middle_point);
+        std::cout<<"the light average gray pixel is :"<<abs(avg_pixel)<<std::endl; // 9 ~ 13
+        if (abs(avg_pixel)<dark_thresh_)
         {
             flash_counter_+=1e-5;
-            cv::rectangle(cv_image_->image,light_rect,cv::Scalar(0,0,255),3);
+//            cv::rectangle(cv_image_->image,light_rect,cv::Scalar(0,0,255),3);
             cv::circle(cv_image_->image, light_middle_point, 10, cv::Scalar(0,0,255), 5);
             cv::rectangle(cv_image_->image,mineral,cv::Scalar(0,0,255),3);
             cv::circle(cv_image_->image, mineral_point, 10, cv::Scalar(0,0,255), 5);
@@ -150,7 +151,17 @@ namespace mineral_detect {
             if(flash_counter_>0)
             {
                 flash_counter_ -= 1e-5;
-                if(flash_counter_>0) return true;
+                if(flash_counter_>0)
+                {
+//                    cv::rectangle(cv_image_->image,light_rect,cv::Scalar(0,0,255),3);
+                    cv::circle(cv_image_->image, light_middle_point, 10, cv::Scalar(0,0,255), 5);
+                    cv::rectangle(cv_image_->image,mineral,cv::Scalar(0,0,255),3);
+                    cv::circle(cv_image_->image, mineral_point, 10, cv::Scalar(0,0,255), 5);
+                    cv::line(cv_image_->image,light_middle_point,arrow_base,cv::Scalar(0,0,255),6);
+                    cv::line(cv_image_->image,arrow_left,arrow_base,cv::Scalar(0,0,255),6);
+                    cv::line(cv_image_->image,arrow_right,arrow_base,cv::Scalar(0,0,255),6);
+                    return true;
+                }
                 if (flash_counter_<=flash_counter_thresh_)
                 {
                     flash_counter_=0;
