@@ -56,6 +56,9 @@ namespace mineral_detect
         double box_light_ratio_;
         double light_rect_width_ratio_;
         double light_rect_height_ratio_;
+        double arrow_base_ratio_;
+        double arrow_branch_ratio_base_;
+        double arrow_branch_ratio_base_x_;
         int dark_thresh_;
         cv::Mat camera_matrix_;
         cv::Mat distortion_coefficients_;

@@ -119,15 +119,15 @@ namespace mineral_detect {
         cv::rectangle(cv_image_->image,mineral,cv::Scalar(255,0,0),3);
         cv::circle(cv_image_->image, mineral_point, 10, cv::Scalar(255,0,0), 5);
 
-        cv::Point2i arrow_base (mineral_point.x,mineral_point.y-int(0.2*(mineral_point.y-light_middle_point.y)));
-        cv::line(cv_image_->image,light_middle_point,arrow_base,cv::Scalar(255,0,0),2);
+        cv::Point2i arrow_base (mineral_point.x,mineral_point.y-int(arrow_base_ratio_*(mineral_point.y-light_middle_point.y)));
+        cv::line(cv_image_->image,light_middle_point,arrow_base,cv::Scalar(255,0,0),6);
 
-        cv::Point2i arrow_branch_base(mineral_point.x,int(0.8*arrow_base.y));
-        cv::Point2i arrow_left(mineral_point.x-int(0.05*arrow_base.y),arrow_branch_base.y);
-        cv::Point2i arrow_right(mineral_point.x+int(0.05*arrow_base.y),arrow_branch_base.y);
+        cv::Point2i arrow_branch_base(mineral_point.x,int(arrow_branch_ratio_base_*arrow_base.y));
+        cv::Point2i arrow_left(mineral_point.x-int(arrow_branch_ratio_base_x_*arrow_base.y),arrow_branch_base.y);
+        cv::Point2i arrow_right(mineral_point.x+int(arrow_branch_ratio_base_x_*arrow_base.y),arrow_branch_base.y);
 
-        cv::line(cv_image_->image,arrow_left,arrow_base,cv::Scalar(255,0,0),2);
-        cv::line(cv_image_->image,arrow_right,arrow_base,cv::Scalar(255,0,0),2);
+        cv::line(cv_image_->image,arrow_left,arrow_base,cv::Scalar(255,0,0),6);
+        cv::line(cv_image_->image,arrow_right,arrow_base,cv::Scalar(255,0,0),6);
 
         int avg_pixel;
         avg_pixel=calculateGrayValue(light_rect,gray_img);
@@ -139,9 +139,9 @@ namespace mineral_detect {
             cv::circle(cv_image_->image, light_middle_point, 10, cv::Scalar(0,0,255), 5);
             cv::rectangle(cv_image_->image,mineral,cv::Scalar(0,0,255),3);
             cv::circle(cv_image_->image, mineral_point, 10, cv::Scalar(0,0,255), 5);
-            cv::line(cv_image_->image,light_middle_point,arrow_base,cv::Scalar(0,0,255),2);
-            cv::line(cv_image_->image,arrow_left,arrow_base,cv::Scalar(0,0,255),2);
-            cv::line(cv_image_->image,arrow_right,arrow_base,cv::Scalar(0,0,255),2);
+            cv::line(cv_image_->image,light_middle_point,arrow_base,cv::Scalar(0,0,255),6);
+            cv::line(cv_image_->image,arrow_left,arrow_base,cv::Scalar(0,0,255),6);
+            cv::line(cv_image_->image,arrow_right,arrow_base,cv::Scalar(0,0,255),6);
 
             return true;
         }
@@ -268,6 +268,9 @@ namespace mineral_detect {
             light_rect_height_ratio_=config.light_rect_height_ratio;
             dark_thresh_=config.dark_thresh;
             flash_counter_thresh_=config.flash_counter_thresh;
+            arrow_base_ratio_=config.arrow_base_ratio;
+            arrow_branch_ratio_base_=config.arrow_branch_ratio_base;
+            arrow_branch_ratio_base_x_=config.arrow_branch_ratio_base_x;
         }
 
         Detector::~Detector()=default;
