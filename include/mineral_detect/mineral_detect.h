@@ -52,7 +52,7 @@ namespace mineral_detect
         double roi_nonzero_percent_;
         double shape_bias_;
         double flash_counter_;
-        double flash_counter_thresh_;
+//        int flash_counter_thresh_;
         double box_light_ratio_;
         double light_rect_width_ratio_;
         double light_rect_height_ratio_;
