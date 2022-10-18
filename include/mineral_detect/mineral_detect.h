@@ -25,13 +25,11 @@ namespace mineral_detect
 
         void dynamicCallback(mineral_detect::dynamicConfig& config);
 
-        cv::Point2i targetPointSelect(std::vector<cv::Point2i> &points_vec,std::vector<cv::Rect> &rect_vec);
+        cv::Point2i targetPointSelect(std::vector<cv::Point2i> &points_vec,std::vector<cv::Rect> &rect_vec,std::vector<cv::Point2i> &text_vec);
 
         bool chooseRect(const cv::Rect &rect);
 
         bool rectColorChoose(const cv::Rect &rect);
-
-        cv::Rect middlePointCompention(const cv::Rect &rect);
 
         cv_bridge::CvImagePtr cv_image_;
         int morph_type_;
@@ -47,6 +45,10 @@ namespace mineral_detect
         double min_area_thresh_;
         double roi_nonzero_percent_;
         double shape_bias_;
+        double x_scale_;
+        double y_scale_;
+        double text_size_;
+        double y_bias_;
 
         cv::Mat camera_matrix_;
         cv::Mat distortion_coefficients_;

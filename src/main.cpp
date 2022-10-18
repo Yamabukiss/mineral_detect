@@ -63,6 +63,7 @@ namespace mineral_detect {
         cv::Point2f min_area_rect_points[4];
         std_msgs::Float32MultiArray middle_point_array;
         std::vector<cv::Point2i> middle_points_vec;
+        std::vector<cv::Point2i> text_points_vec;
         std::vector<cv::Rect> rect_vec;
         for (int i = 0; i < contours.size(); ++i)
         {
@@ -77,28 +78,35 @@ namespace mineral_detect {
                     if (rect_to_color_select.br().y>cv_image_->image.rows-1) continue;
                     if(rectColorChoose(rect_to_color_select))
                     {
-                        if(cv::arcLength(contours[i], true)/cv::contourArea(contours[i])>=min_perimeter_area_ratio_&&cv::arcLength(contours[i], true)/cv::contourArea(contours[i])<=max_perimeter_area_ratio_)
-                        {
-                                if(rect_to_color_select.height>rect_to_color_select.width) rect_to_color_select.height = rect_to_color_select.width;
-                                cv::Rect compentioned_rect=middlePointCompention(rect_to_color_select);
-                                cv::Point2i middle_point(compentioned_rect.x+compentioned_rect.width/2,compentioned_rect.y+compentioned_rect.height/2);
-                                cv::rectangle(cv_image_->image,compentioned_rect,cv::Scalar(255,0,255),3);
-                                cv::circle(cv_image_->image, middle_point, 2, cv::Scalar(255,0,255), 5);
+//                        if(cv::arcLength(contours[i], true)/cv::contourArea(contours[i])>=min_perimeter_area_ratio_&&cv::arcLength(contours[i], true)/cv::contourArea(contours[i])<=max_perimeter_area_ratio_)
+//                        {
+//                                if(rect_to_color_select.height>rect_to_color_select.width) rect_to_color_select.height = rect_to_color_select.width;
+//                                int bias=0;
+//                                if(rect_to_color_select.width>rect_to_color_select.height) bias=rect_to_color_select.width-rect_to_color_select.height;
+                                int bias=rect_to_color_select.width-rect_to_color_select.height;
+                                cv::Point2i middle_point(rect_to_color_select.x+rect_to_color_select.width/2,(rect_to_color_select.y+rect_to_color_select.height/2)-int(bias*y_bias_));
+                                cv::Point2i text_point (int(middle_point.x*x_scale_),int((middle_point.y+int(rect_to_color_select.height/2))*y_scale_));
+                                cv::rectangle(cv_image_->image,rect_to_color_select,cv::Scalar(106,90,205),5);
+                                cv::circle(cv_image_->image, middle_point, 2, cv::Scalar(106,90,205), 7);
+//                                cv::putText(cv_image_->image,"PROPOSAL",text_point,cv::FONT_HERSHEY_SCRIPT_COMPLEX,text_size_,cv::Scalar(106,90,205),8);
                                 middle_points_vec.emplace_back(middle_point);
-                                rect_vec.emplace_back(compentioned_rect);
-                        } else continue;
+                                rect_vec.emplace_back(rect_to_color_select);
+                                text_points_vec.emplace_back(text_point);
+//                        } else continue;
                 } else continue;
             } else continue;
         }
-
-        cv::Point2i target_point= targetPointSelect(middle_points_vec,rect_vec);
-        middle_point_array.data.push_back((float)target_point.x);
-        middle_point_array.data.push_back((float)target_point.y);
-        point_publisher_.publish(middle_point_array);
+        if(!middle_points_vec.empty() && !rect_vec.empty())
+        {
+            cv::Point2i target_point= targetPointSelect(middle_points_vec,rect_vec,text_points_vec);
+            middle_point_array.data.push_back((float)target_point.x);
+            middle_point_array.data.push_back((float)target_point.y);
+            point_publisher_.publish(middle_point_array);
+        }
 
         test_publisher_.publish(cv_bridge::CvImage(std_msgs::Header(), cv_image_->encoding, cv_image_->image).toImageMsg());
         }
-    cv::Point2i Detector::targetPointSelect(std::vector<cv::Point2i> &points_vec,std::vector<cv::Rect> &rect_vec)
+    cv::Point2i Detector::targetPointSelect(std::vector<cv::Point2i> &points_vec,std::vector<cv::Rect> &rect_vec,std::vector<cv::Point2i> &text_vec)
     {
         cv::Point2i img_center (int(cv_image_->image.cols/2)-1,int(cv_image_->image.rows/2)-1);
         int min_x=cv_image_->image.cols;
@@ -115,9 +123,11 @@ namespace mineral_detect {
         auto min_point_iter=std::find(points_vec.begin(), points_vec.end(),min_bias_point);
         int min_point_index=std::distance(points_vec.begin(),min_point_iter);
         cv::Point2i target_point=points_vec[min_point_index];
+        cv::Point2i text_point=text_vec[min_point_index];
         cv::Rect target_rect=rect_vec[min_point_index];
-        cv::rectangle(cv_image_->image,target_rect,cv::Scalar(255,0,255),3);
-        cv::circle(cv_image_->image, target_point, 2, cv::Scalar(255,0,255), 5);
+        cv::rectangle(cv_image_->image,target_rect,cv::Scalar(0,199,140),5);
+        cv::circle(cv_image_->image, target_point, 2, cv::Scalar(0,199,140), 7);
+        cv::putText(cv_image_->image,"Target",text_point,cv::FONT_HERSHEY_SCRIPT_COMPLEX,text_size_,cv::Scalar(0,199,140),8);
         return target_point;
     }
 
@@ -185,14 +195,6 @@ namespace mineral_detect {
         else return false;
     }
 
-    cv::Rect Detector::middlePointCompention(const cv::Rect &rect)
-    {
-        int bias=rect.height-rect.width;
-        cv::Rect new_rect(rect.x,rect.y,rect.width,rect.height-bias);
-        if(bias>=shape_bias_)   return new_rect;
-        else return rect;
-    }
-
     void Detector::dynamicCallback(mineral_detect::dynamicConfig &config) {
             morph_type_ = config.morph_type;
             morph_iterations_ = config.morph_iterations;
@@ -207,6 +209,10 @@ namespace mineral_detect {
             min_perimeter_area_ratio_=config.min_perimeter_area_ratio;
             max_perimeter_area_ratio_=config.max_perimeter_area_ratio;
             shape_bias_=config.shape_bias;
+            x_scale_=config.x_scale;
+            y_scale_=config.y_scale;
+            text_size_=config.text_size;
+            y_bias_=config.y_bias;
         }
 
         Detector::~Detector()=default;
