@@ -43,7 +43,6 @@ namespace mineral_detect {
         point_publisher_=nh_.advertise<std_msgs::Float32MultiArray>("point_publisher",1);
         callback_ = boost::bind(&Detector::dynamicCallback, this, _1);
         server_.setCallback(callback_);
-        flash_counter_=0;
     }
 
     void Detector::receiveFromCam(const sensor_msgs::ImageConstPtr &image) {
@@ -62,6 +61,9 @@ namespace mineral_detect {
         std::vector< std::vector< cv::Point> > contours;
         cv::findContours(mor_img,contours,cv::RETR_EXTERNAL,CV_CHAIN_APPROX_SIMPLE);
         cv::Point2f min_area_rect_points[4];
+        std_msgs::Float32MultiArray middle_point_array;
+        std::vector<cv::Point2i> middle_points_vec;
+        std::vector<cv::Rect> rect_vec;
         for (int i = 0; i < contours.size(); ++i)
         {
             cv::RotatedRect min_area_rect = cv::minAreaRect(cv::Mat(contours[i]));
@@ -80,111 +82,45 @@ namespace mineral_detect {
                                 if(rect_to_color_select.height>rect_to_color_select.width) rect_to_color_select.height = rect_to_color_select.width;
                                 cv::Rect compentioned_rect=middlePointCompention(rect_to_color_select);
                                 cv::Point2i middle_point(compentioned_rect.x+compentioned_rect.width/2,compentioned_rect.y+compentioned_rect.height/2);
-                                if(flashProcess(middle_point,compentioned_rect,gray_img))
-                                {
-                                    std_msgs::Float32MultiArray middle_point_array;
-                                    middle_point_array.data.push_back((float)middle_point.x);
-                                    middle_point_array.data.push_back((float)middle_point.y);
-                                    point_publisher_.publish(middle_point_array);
-                                }
-                                std::cout<<flash_counter_<<std::endl;
+                                cv::rectangle(cv_image_->image,compentioned_rect,cv::Scalar(255,0,255),3);
+                                cv::circle(cv_image_->image, middle_point, 2, cv::Scalar(255,0,255), 5);
+                                middle_points_vec.emplace_back(middle_point);
+                                rect_vec.emplace_back(compentioned_rect);
                         } else continue;
-                } else
-                    {
-                        flash_counter_=0;
-                        continue;
-                    }
+                } else continue;
             } else continue;
         }
 
+        cv::Point2i target_point= targetPointSelect(middle_points_vec,rect_vec);
+        middle_point_array.data.push_back((float)target_point.x);
+        middle_point_array.data.push_back((float)target_point.y);
+        point_publisher_.publish(middle_point_array);
+
         test_publisher_.publish(cv_bridge::CvImage(std_msgs::Header(), cv_image_->encoding, cv_image_->image).toImageMsg());
         }
-
-    bool Detector::flashProcess(cv::Point2i &mineral_point,cv::Rect &mineral,cv::Mat &gray_img)
+    cv::Point2i Detector::targetPointSelect(std::vector<cv::Point2i> &points_vec,std::vector<cv::Rect> &rect_vec)
     {
-//        int light_rect_width=int(light_rect_width_ratio_*float(mineral.width));
-//        int light_rect_height=int(light_rect_height_ratio_*float(mineral.height));
-        int light_x=mineral.x+mineral.width/2;
-        int light_y=mineral_point.y-int(box_light_ratio_*float((mineral_point.y-mineral.x)));
-        if (light_y<0) light_y=0;
-        cv::Point2i  light_middle_point=cv::Point2i (light_x,light_y);
-//        cv::Rect light_rect;
-//        light_rect.width=light_rect_width;
-//        light_rect.height=light_rect_height;
-//        light_rect.x=int(light_middle_point.x-light_rect_width/2);
-//        light_rect.y=int(light_middle_point.y-light_rect_height/2);
-//        cv::rectangle(cv_image_->image,light_rect,cv::Scalar(255,0,255),3);
-        cv::circle(cv_image_->image, light_middle_point, 2, cv::Scalar(255,0,255), 5);
-        cv::rectangle(cv_image_->image,mineral,cv::Scalar(255,0,255),3);
-        cv::circle(cv_image_->image, mineral_point, 2, cv::Scalar(255,0,255), 5);
-
-        cv::Point2i arrow_base (mineral_point.x,mineral_point.y-int(arrow_base_ratio_*(mineral_point.y-light_middle_point.y)));
-        cv::line(cv_image_->image,light_middle_point,arrow_base,cv::Scalar(255,0,255),6);
-
-        cv::Point2i arrow_branch_base(mineral_point.x,int(arrow_branch_ratio_base_*arrow_base.y));
-        cv::Point2i arrow_left(mineral_point.x-int(arrow_branch_ratio_base_x_*arrow_base.y),arrow_branch_base.y);
-        cv::Point2i arrow_right(mineral_point.x+int(arrow_branch_ratio_base_x_*arrow_base.y),arrow_branch_base.y);
-
-        cv::line(cv_image_->image,arrow_left,arrow_base,cv::Scalar(255,0,255),6);
-        cv::line(cv_image_->image,arrow_right,arrow_base,cv::Scalar(255,0,255),6);
-
-        int avg_pixel;
-//        avg_pixel=calculateGrayValue(light_rect,gray_img);
-        avg_pixel=gray_img.at<uchar>(light_middle_point);
-        std::cout<<"the light average gray pixel is :"<<abs(avg_pixel)<<std::endl; // 9 ~ 13
-        if (abs(avg_pixel)<dark_thresh_)
+        cv::Point2i img_center (int(cv_image_->image.cols/2)-1,int(cv_image_->image.rows/2)-1);
+        int min_x=cv_image_->image.cols;
+        cv::Point2i min_bias_point;
+        for (auto i=points_vec.begin();i<points_vec.end();i++)
         {
-            flash_counter_+=1.2;
-//            cv::rectangle(cv_image_->image,light_rect,cv::Scalar(0,0,255),3);
-            cv::circle(cv_image_->image, light_middle_point, 2, cv::Scalar(0,0,255), 5);
-            cv::rectangle(cv_image_->image,mineral,cv::Scalar(0,0,255),3);
-            cv::circle(cv_image_->image, mineral_point, 2, cv::Scalar(0,0,255), 5);
-            cv::line(cv_image_->image,light_middle_point,arrow_base,cv::Scalar(0,0,255),6);
-            cv::line(cv_image_->image,arrow_left,arrow_base,cv::Scalar(0,0,255),6);
-            cv::line(cv_image_->image,arrow_right,arrow_base,cv::Scalar(0,0,255),6);
-
-            return true;
-        }
-        else
-        {
-            if(flash_counter_>0)
+            int bias= abs(i->x-img_center.x);
+            if(bias<min_x)
             {
-                flash_counter_ -= 1;
-//                    cv::rectangle(cv_image_->image,light_rect,cv::Scalar(0,0,255),3);
-                cv::circle(cv_image_->image, light_middle_point, 2, cv::Scalar(0, 0, 255), 5);
-                cv::rectangle(cv_image_->image, mineral, cv::Scalar(0, 0, 255), 3);
-                cv::circle(cv_image_->image, mineral_point, 2, cv::Scalar(0, 0, 255), 5);
-                cv::line(cv_image_->image, light_middle_point, arrow_base, cv::Scalar(0, 0, 255), 6);
-                cv::line(cv_image_->image, arrow_left, arrow_base, cv::Scalar(0, 0, 255), 6);
-                cv::line(cv_image_->image, arrow_right, arrow_base, cv::Scalar(0, 0, 255), 6);
-                return true;
-            }
-                if (flash_counter_<0)
-                {
-                    flash_counter_=0;
-                    return false;
-                }
-            }
-
-    }
-
-
-    int Detector::calculateGrayValue(cv::Rect & rect,cv::Mat &gray_img)
-    {
-        int sum_pixel=0;
-        int max_pixel=0;
-        for (int i=rect.x;i<rect.x+rect.width;i++)
-        {
-            for (int j = rect.y; j < rect.y + rect.height; j++)
-            {
-                if(max_pixel<gray_img.at<uchar>(i,j)) max_pixel=gray_img.at<uchar>(i,j);
+                min_x=bias;
+                min_bias_point=*i;
             }
         }
-
-//        int avg_pixel=int(sum_pixel/rect.area());
-
-        return max_pixel;
+        auto min_point_iter=std::find(points_vec.begin(), points_vec.end(),min_bias_point);
+        int min_point_index=std::distance(points_vec.begin(),min_point_iter);
+        cv::Point2i target_point=points_vec[min_point_index];
+        cv::Rect target_rect=rect_vec[min_point_index];
+        cv::rectangle(cv_image_->image,target_rect,cv::Scalar(255,0,255),3);
+        cv::circle(cv_image_->image, target_point, 2, cv::Scalar(255,0,255), 5);
+        return target_point;
     }
+
 
     bool Detector::chooseRect(const cv::Rect &rect)
         {
@@ -271,14 +207,6 @@ namespace mineral_detect {
             min_perimeter_area_ratio_=config.min_perimeter_area_ratio;
             max_perimeter_area_ratio_=config.max_perimeter_area_ratio;
             shape_bias_=config.shape_bias;
-            box_light_ratio_=config.box_light_ratio;
-            light_rect_width_ratio_=config.light_rect_width_ratio;
-            light_rect_height_ratio_=config.light_rect_height_ratio;
-            dark_thresh_=config.dark_thresh;
-//            flash_counter_thresh_=config.flash_counter_thresh;
-            arrow_base_ratio_=config.arrow_base_ratio;
-            arrow_branch_ratio_base_=config.arrow_branch_ratio_base;
-            arrow_branch_ratio_base_x_=config.arrow_branch_ratio_base_x;
         }
 
         Detector::~Detector()=default;

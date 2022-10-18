@@ -25,15 +25,11 @@ namespace mineral_detect
 
         void dynamicCallback(mineral_detect::dynamicConfig& config);
 
-        bool flashProcess(cv::Point2i &mineral_point,cv::Rect &mineral,cv::Mat &gray_img);
-
-        int calculateGrayValue(cv::Rect & rect,cv::Mat &gray_img);
+        cv::Point2i targetPointSelect(std::vector<cv::Point2i> &points_vec,std::vector<cv::Rect> &rect_vec);
 
         bool chooseRect(const cv::Rect &rect);
 
         bool rectColorChoose(const cv::Rect &rect);
-
-        cv::Point2f getMiddlePoint(const std::vector<float> &point_x_vector,const std::vector<float> &point_y_vector,std::vector<cv::Point2f> &coordinate_vec2d);
 
         cv::Rect middlePointCompention(const cv::Rect &rect);
 
@@ -51,15 +47,7 @@ namespace mineral_detect
         double min_area_thresh_;
         double roi_nonzero_percent_;
         double shape_bias_;
-        double flash_counter_;
-//        int flash_counter_thresh_;
-        double box_light_ratio_;
-        double light_rect_width_ratio_;
-        double light_rect_height_ratio_;
-        double arrow_base_ratio_;
-        double arrow_branch_ratio_base_;
-        double arrow_branch_ratio_base_x_;
-        int dark_thresh_;
+
         cv::Mat camera_matrix_;
         cv::Mat distortion_coefficients_;
         cv::Mat rvec_;
