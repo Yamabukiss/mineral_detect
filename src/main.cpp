@@ -77,6 +77,7 @@ namespace mineral_detect {
                     {
                         if(cv::arcLength(contours[i], true)/cv::contourArea(contours[i])>=min_perimeter_area_ratio_&&cv::arcLength(contours[i], true)/cv::contourArea(contours[i])<=max_perimeter_area_ratio_)
                         {
+                                if(rect_to_color_select.height>rect_to_color_select.width) rect_to_color_select.height = rect_to_color_select.width;
                                 cv::Rect compentioned_rect=middlePointCompention(rect_to_color_select);
                                 cv::Point2i middle_point(compentioned_rect.x+compentioned_rect.width/2,compentioned_rect.y+compentioned_rect.height/2);
                                 if(flashProcess(middle_point,compentioned_rect,gray_img))
@@ -101,10 +102,10 @@ namespace mineral_detect {
 
     bool Detector::flashProcess(cv::Point2i &mineral_point,cv::Rect &mineral,cv::Mat &gray_img)
     {
-        int light_rect_width=int(light_rect_width_ratio_*float(mineral.width));
-        int light_rect_height=int(light_rect_height_ratio_*float(mineral.height));
+//        int light_rect_width=int(light_rect_width_ratio_*float(mineral.width));
+//        int light_rect_height=int(light_rect_height_ratio_*float(mineral.height));
         int light_x=mineral.x+mineral.width/2;
-        int light_y=mineral_point.y-int(box_light_ratio_*float((mineral_point.y-mineral.y)));
+        int light_y=mineral_point.y-int(box_light_ratio_*float((mineral_point.y-mineral.x)));
         if (light_y<0) light_y=0;
         cv::Point2i  light_middle_point=cv::Point2i (light_x,light_y);
 //        cv::Rect light_rect;
@@ -150,9 +151,9 @@ namespace mineral_detect {
             {
                 flash_counter_ -= 1;
 //                    cv::rectangle(cv_image_->image,light_rect,cv::Scalar(0,0,255),3);
-                cv::circle(cv_image_->image, light_middle_point, 10, cv::Scalar(0, 0, 255), 5);
+                cv::circle(cv_image_->image, light_middle_point, 2, cv::Scalar(0, 0, 255), 5);
                 cv::rectangle(cv_image_->image, mineral, cv::Scalar(0, 0, 255), 3);
-                cv::circle(cv_image_->image, mineral_point, 10, cv::Scalar(0, 0, 255), 5);
+                cv::circle(cv_image_->image, mineral_point, 2, cv::Scalar(0, 0, 255), 5);
                 cv::line(cv_image_->image, light_middle_point, arrow_base, cv::Scalar(0, 0, 255), 6);
                 cv::line(cv_image_->image, arrow_left, arrow_base, cv::Scalar(0, 0, 255), 6);
                 cv::line(cv_image_->image, arrow_right, arrow_base, cv::Scalar(0, 0, 255), 6);
