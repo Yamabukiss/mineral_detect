@@ -51,7 +51,6 @@ namespace mineral_detect {
         cv::Mat origin_img = cv_image_->image.clone();
         cv::Mat gray_img;
         cv::cvtColor(origin_img,gray_img,CV_BGR2GRAY);
-        gray_publisher_.publish(cv_bridge::CvImage(std_msgs::Header(), "mono8", gray_img).toImageMsg());
         cv::Mat hsv_img;
         cv::cvtColor(origin_img,hsv_img,cv::COLOR_BGR2HSV);
         cv::Mat bin_img;
@@ -62,11 +61,7 @@ namespace mineral_detect {
         hsv_publisher_.publish(cv_bridge::CvImage(std_msgs::Header(), "mono8", mor_img).toImageMsg());
         std::vector< std::vector< cv::Point> > contours;
         cv::findContours(mor_img,contours,cv::RETR_EXTERNAL,CV_CHAIN_APPROX_SIMPLE);
-//        mor_img=cv::Scalar::all(0);
         cv::Point2f min_area_rect_points[4];
-//        std::vector<float> point_x_vector;
-//        std::vector<float> point_y_vector;
-//        std::vector<cv::Rect> rect_vector;
         for (int i = 0; i < contours.size(); ++i)
         {
             cv::RotatedRect min_area_rect = cv::minAreaRect(cv::Mat(contours[i]));
@@ -93,7 +88,11 @@ namespace mineral_detect {
                                 }
                                 std::cout<<flash_counter_<<std::endl;
                         } else continue;
-                } else continue;
+                } else
+                    {
+                        flash_counter_=0;
+                        continue;
+                    }
             } else continue;
         }
 
