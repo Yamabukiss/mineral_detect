@@ -72,7 +72,6 @@ namespace mineral_detect {
             cv::Rect rect_to_color_select(min_area_rect_points[0],min_area_rect_points[2]);
             std::vector<cv::Point2i> hull;
             cv::convexHull( contours[i],hull, true);
-            std::cout<<hull.size()<<std::endl;
             if(chooseRect(rect_to_color_select))
             {
                     if (rect_to_color_select.tl().x<0) continue;
@@ -81,26 +80,15 @@ namespace mineral_detect {
                     if (rect_to_color_select.br().y>cv_image_->image.rows-1) continue;
                     if(rectColorChoose(rect_to_color_select))
                     {
-//                        if(cv::arcLength(contours[i], true)/cv::contourArea(contours[i])>=min_perimeter_area_ratio_&&cv::arcLength(contours[i], true)/cv::contourArea(contours[i])<=max_perimeter_area_ratio_)
-//                        {
-//                                if(rect_to_color_select.height>rect_to_color_select.width) rect_to_color_select.height = rect_to_color_select.width;
-//                                int bias=0;
-//                                if(rect_to_color_select.width>rect_to_color_select.height) bias=rect_to_color_select.width-rect_to_color_select.height;
-                                int bias=rect_to_color_select.width-rect_to_color_select.height;
-                                cv::Point2i middle_point(rect_to_color_select.x+rect_to_color_select.width/2,(rect_to_color_select.y+rect_to_color_select.height/2)-int(bias*y_bias_));
-                                cv::Point2i text_point (int(middle_point.x*x_scale_),int((middle_point.y+int(rect_to_color_select.height/2))*y_scale_));
-//                                cv::rectangle(cv_image_->image,rect_to_color_select,cv::Scalar(106,90,205),5);
-                                cv::polylines(cv_image_->image,hull, true,cv::Scalar(255,0,0),6);
-//                                for(int i=0;i<hull.size()-1;i++)
-//                                {
-//                                    cv::line(cv_image_->image,hull[i],hull[i+1],cv::Scalar(255,0,0));
-//                                }
-                                cv::circle(cv_image_->image, middle_point, 2, cv::Scalar(106,90,205), 7);
-//                                cv::putText(cv_image_->image,"PROPOSAL",text_point,cv::FONT_HERSHEY_SCRIPT_COMPLEX,text_size_,cv::Scalar(106,90,205),8);
-                                middle_points_vec.emplace_back(middle_point);
-                                rect_vec.emplace_back(rect_to_color_select);
-                                text_points_vec.emplace_back(text_point);
-//                        } else continue;
+                        auto M = cv::moments(hull);
+                        auto cX = int(M.m10 / M.m00);
+                        auto cY = int(M.m01/  M.m00);
+                        cv::Point2i middle_point(cX,cY);
+                        cv::Point2i text_point (int(middle_point.x*x_scale_),int((middle_point.y+int(rect_to_color_select.height/2))*y_scale_));
+                        cv::polylines(cv_image_->image,hull, true,cv::Scalar(106,90,205),6);
+                        middle_points_vec.emplace_back(middle_point);
+                        rect_vec.emplace_back(rect_to_color_select);
+                        text_points_vec.emplace_back(text_point);
                 } else continue;
             } else continue;
         }
@@ -134,7 +122,7 @@ namespace mineral_detect {
         cv::Point2i text_point=text_vec[min_point_index];
         cv::Rect target_rect=rect_vec[min_point_index];
 //        cv::rectangle(cv_image_->image,target_rect,cv::Scalar(0,199,140),5);
-        cv::circle(cv_image_->image, target_point, 2, cv::Scalar(0,199,140), 7);
+//        cv::circle(cv_image_->image, target_point, 2, cv::Scalar(0,199,140), 7);
         cv::putText(cv_image_->image,"Target",text_point,cv::FONT_HERSHEY_SCRIPT_COMPLEX,text_size_,cv::Scalar(0,199,140),8);
         return target_point;
     }
