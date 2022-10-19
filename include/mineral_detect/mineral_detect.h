@@ -49,7 +49,8 @@ namespace mineral_detect
         double y_scale_;
         double text_size_;
         double y_bias_;
-
+        double back_hu1_;
+        double back_hu2_;
         cv::Mat camera_matrix_;
         cv::Mat distortion_coefficients_;
         cv::Mat rvec_;

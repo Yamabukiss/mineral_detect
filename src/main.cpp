@@ -43,6 +43,14 @@ namespace mineral_detect {
         point_publisher_=nh_.advertise<std_msgs::Float32MultiArray>("point_publisher",1);
         callback_ = boost::bind(&Detector::dynamicCallback, this, _1);
         server_.setCallback(callback_);
+        cv::Mat back_mineral=cv::imread("/home/yamabuki/Downloads/mineral.jpg");
+        cv::cvtColor(back_mineral,back_mineral,CV_BGR2GRAY);
+        threshold(back_mineral, back_mineral, 128, 255, CV_THRESH_OTSU);
+        auto back_mineral_moment=cv::moments(back_mineral, true);
+        double back_hu[7];
+        cv::HuMoments(back_mineral_moment,back_hu);
+        back_hu1_=back_hu[0];
+        back_hu2_=back_hu[1];
     }
 
     void Detector::receiveFromCam(const sensor_msgs::ImageConstPtr &image) {
@@ -60,39 +68,37 @@ namespace mineral_detect {
         hsv_publisher_.publish(cv_bridge::CvImage(std_msgs::Header(), "mono8", mor_img).toImageMsg());
         std::vector< std::vector< cv::Point> > contours;
         cv::findContours(mor_img,contours,cv::RETR_EXTERNAL,CV_CHAIN_APPROX_SIMPLE);
-        cv::Point2f min_area_rect_points[4];
         std_msgs::Float32MultiArray middle_point_array;
         std::vector<cv::Point2i> middle_points_vec;
         std::vector<cv::Point2i> text_points_vec;
         std::vector<cv::Rect> rect_vec;
         for (int i = 0; i < contours.size(); ++i)
         {
-            cv::RotatedRect min_area_rect = cv::minAreaRect(cv::Mat(contours[i]));
-            min_area_rect.points(min_area_rect_points);
-            cv::Rect rect_to_color_select(min_area_rect_points[0],min_area_rect_points[2]);
             std::vector<cv::Point2i> hull;
             cv::convexHull( contours[i],hull, true);
-            if(chooseRect(rect_to_color_select))
-            {
-                    if (rect_to_color_select.tl().x<0) continue;
-                    if (rect_to_color_select.br().x>cv_image_->image.cols-1) continue;
-                    if (rect_to_color_select.tl().y<0) continue;
-                    if (rect_to_color_select.br().y>cv_image_->image.rows-1) continue;
-                    if(rectColorChoose(rect_to_color_select))
+                    if(cv::contourArea(hull)>min_area_thresh_)
                     {
-                        auto M = cv::moments(hull);
-                        auto cX = int(M.m10 / M.m00);
-                        auto cY = int(M.m01/  M.m00);
-                        cv::Point2i middle_point(cX,cY);
-                        cv::Point2i text_point (int(middle_point.x*x_scale_),int((middle_point.y+int(rect_to_color_select.height/2))*y_scale_));
+                        auto moment = cv::moments(hull);
+                        double hu_res[7];
+                        cv::HuMoments(moment,hu_res);
+                        auto cx = int(moment.m10 / moment.m00);
+                        std::cout<<back_hu1_<<std::endl;
+                        std::cout<<back_hu2_<<std::endl;
+                        std::cout<<"***********"<<std::endl;
+                        std::cout<<hu_res[0]<<std::endl;
+                        std::cout<<hu_res[1]<<std::endl;
+                        std::cout<<"-------------"<<std::endl;
+                        auto cy = int(moment.m01/  moment.m00);
+                        cv::Point2i middle_point(cx,cy);
+//                        cv::Point2i text_point (int(middle_point.x*x_scale_),int((middle_point.y+int(rect_to_color_select.height/2))*y_scale_));
                         cv::polylines(cv_image_->image,hull, true,cv::Scalar(106,90,205),6);
                         middle_points_vec.emplace_back(middle_point);
-                        rect_vec.emplace_back(rect_to_color_select);
-                        text_points_vec.emplace_back(text_point);
+//                        rect_vec.emplace_back(rect_to_color_select);
+//                        text_points_vec.emplace_back(text_point);
                 } else continue;
-            } else continue;
+//            } else continue;
         }
-        if(!middle_points_vec.empty() && !rect_vec.empty())
+        if(!middle_points_vec.empty())
         {
             cv::Point2i target_point= targetPointSelect(middle_points_vec,rect_vec,text_points_vec);
             middle_point_array.data.push_back((float)target_point.x);
@@ -119,11 +125,11 @@ namespace mineral_detect {
         auto min_point_iter=std::find(points_vec.begin(), points_vec.end(),min_bias_point);
         int min_point_index=std::distance(points_vec.begin(),min_point_iter);
         cv::Point2i target_point=points_vec[min_point_index];
-        cv::Point2i text_point=text_vec[min_point_index];
-        cv::Rect target_rect=rect_vec[min_point_index];
+//        cv::Point2i text_point=text_vec[min_point_index];
+//        cv::Rect target_rect=rect_vec[min_point_index];
 //        cv::rectangle(cv_image_->image,target_rect,cv::Scalar(0,199,140),5);
-//        cv::circle(cv_image_->image, target_point, 2, cv::Scalar(0,199,140), 7);
-        cv::putText(cv_image_->image,"Target",text_point,cv::FONT_HERSHEY_SCRIPT_COMPLEX,text_size_,cv::Scalar(0,199,140),8);
+        cv::circle(cv_image_->image, target_point, 2, cv::Scalar(0,199,140), 7);
+//        cv::putText(cv_image_->image,"Target",text_point,cv::FONT_HERSHEY_SCRIPT_COMPLEX,text_size_,cv::Scalar(0,199,140),8);
         return target_point;
     }
 
