@@ -1,5 +1,6 @@
 #include "mineral_detect/mineral_detect.h"
 /// the topic name is "/mineral_detect_node/point_publisher" ///
+int num=1;
 namespace mineral_detect {
     Detector::Detector() = default;
 
@@ -43,14 +44,6 @@ namespace mineral_detect {
         point_publisher_=nh_.advertise<std_msgs::Float32MultiArray>("point_publisher",1);
         callback_ = boost::bind(&Detector::dynamicCallback, this, _1);
         server_.setCallback(callback_);
-        cv::Mat back_mineral=cv::imread("/home/yamabuki/Downloads/mineral.jpg");
-        cv::cvtColor(back_mineral,back_mineral,CV_BGR2GRAY);
-        threshold(back_mineral, back_mineral, 128, 255, CV_THRESH_OTSU);
-        auto back_mineral_moment=cv::moments(back_mineral, true);
-        double back_hu[7];
-        cv::HuMoments(back_mineral_moment,back_hu);
-        back_hu1_=back_hu[0];
-        back_hu2_=back_hu[1];
     }
 
     void Detector::receiveFromCam(const sensor_msgs::ImageConstPtr &image) {
@@ -79,19 +72,63 @@ namespace mineral_detect {
                     if(cv::contourArea(hull)>min_area_thresh_)
                     {
                         auto moment = cv::moments(hull);
-                        double hu_res[7];
-                        cv::HuMoments(moment,hu_res);
                         auto cx = int(moment.m10 / moment.m00);
-                        std::cout<<back_hu1_<<std::endl;
-                        std::cout<<back_hu2_<<std::endl;
-                        std::cout<<"***********"<<std::endl;
-                        std::cout<<hu_res[0]<<std::endl;
-                        std::cout<<hu_res[1]<<std::endl;
-                        std::cout<<"-------------"<<std::endl;
                         auto cy = int(moment.m01/  moment.m00);
+                        cv::Point2i origin_middle_point(cx,cy);
+                        int direct=2;
+                        if(cx<cv_image_->image.cols/2-1) direct=0;
+                        double hu_moment[7];
+                        cv::HuMoments(moment,hu_moment);
+//                        cx= int( 9.79558722e-01 *cx+( -1.46154603e-02*cy)+4.15699319e+00 *100*hu_moment[0]+(direct*-8.52015082e+01)+42.95259902) ;
+//                        cy= int((-6.02135396e-03*cx)+1.03597975e+00*cy+(-4.00755478e+01*100*hu_moment[0])+(direct*-2.97492906e+00)+510.66173278);
+                        int trans_cx= int( 9.79558722e-01 *cx+( -1.46154603e-02*cy)+4.15699319e+00 *100*hu_moment[0]+(direct*-8.52015082e+01)+42.95259902) ;
+//                        int trans_cy= int((-6.02135396e-03*cx)+1.03597975e+00*cy+(-4.00755478e+01*100*hu_moment[0])+(direct*-2.97492906e+00)+510.66173278);
+                        if (direct==0 && trans_cx<origin_middle_point.x)
+                        {
+                            direct = 2;
+                            cx = int(
+                                    9.79558722e-01 * cx + (-1.46154603e-02 * cy) + 4.15699319e+00 * 100 * hu_moment[0] +
+                                    (direct * -8.52015082e+01) + 42.95259902);
+                            cy = int((-6.02135396e-03 * cx) + 1.03597975e+00 * cy +
+                                     (-4.00755478e+01 * 100 * hu_moment[0]) + (direct * -2.97492906e+00) +
+                                     510.66173278);
+                        }
+                        else if (direct==2 && trans_cx>origin_middle_point.x)
+                        {
+                            direct = 0;
+                            cx = int(
+                                    9.79558722e-01 * cx + (-1.46154603e-02 * cy) + 4.15699319e+00 * 100 * hu_moment[0] +
+                                    (direct * -8.52015082e+01) + 42.95259902);
+                            cy = int((-6.02135396e-03 * cx) + 1.03597975e+00 * cy +
+                                     (-4.00755478e+01 * 100 * hu_moment[0]) + (direct * -2.97492906e+00) +
+                                     510.66173278);
+                        }
+                        else
+                        {
+                            direct = 1;
+                            cx = int(
+                                    9.79558722e-01 * cx + (-1.46154603e-02 * cy) + 4.15699319e+00 * 100 * hu_moment[0] +
+                                    (direct * -8.52015082e+01) + 42.95259902);
+                            cy = int((-6.02135396e-03 * cx) + 1.03597975e+00 * cy +
+                                     (-4.00755478e+01 * 100 * hu_moment[0]) + (direct * -2.97492906e+00) +
+                                     510.66173278);
+
+                        }
                         cv::Point2i middle_point(cx,cy);
+                        cv::circle(cv_image_->image, middle_point, 3, cv::Scalar(0,199,140), 7);
 //                        cv::Point2i text_point (int(middle_point.x*x_scale_),int((middle_point.y+int(rect_to_color_select.height/2))*y_scale_));
                         cv::polylines(cv_image_->image,hull, true,cv::Scalar(106,90,205),6);
+                        if(save_on_)
+                        {
+                            std::ofstream ofs;
+                            ofs.open("/home/yamabuki/detect_ws/recorder.txt",std::ios::out|std::ios::app );
+//                            ofs << middle_point << "\t" << hu_moment[0] << "\t"  << theta << "\t" << std::endl;
+                            ofs.close();
+                            cv::imwrite("/home/yamabuki/detect_ws/image/"+ std::to_string(num)+".jpg",mor_img);
+                            std::cout<<"save"<<num<<std::endl;
+                            num++;
+                        }
+                        if(save_on_) save_on_= false;
                         middle_points_vec.emplace_back(middle_point);
 //                        rect_vec.emplace_back(rect_to_color_select);
 //                        text_points_vec.emplace_back(text_point);
@@ -132,6 +169,23 @@ namespace mineral_detect {
 //        cv::putText(cv_image_->image,"Target",text_point,cv::FONT_HERSHEY_SCRIPT_COMPLEX,text_size_,cv::Scalar(0,199,140),8);
         return target_point;
     }
+
+//    cv::Point2i Detector::getTLPoint(const std::vector<cv::Point2i> &hull)
+//    {
+//        std::vector<int> x_vec;
+//        std::vector<int> y_vec;
+//        for(const auto & i : hull)
+//        {
+//            x_vec.push_back(i.x);
+//            y_vec.push_back(i.y);
+//        }
+//
+//        int smallest_x=*std::min_element(std::begin(x_vec), std::end(x_vec));
+//        int smallest_y=*std::min_element(std::begin(y_vec),std::end(y_vec));
+//
+//        return cv::Point2i (smallest_x,smallest_y);
+//
+//    }
 
 
     bool Detector::chooseRect(const cv::Rect &rect)
@@ -208,13 +262,11 @@ namespace mineral_detect {
             upper_hsv_s_=config.upper_hsv_s;
             upper_hsv_v_=config.upper_hsv_v;
             roi_nonzero_percent_=config.roi_nonzero_percent;
-            min_perimeter_area_ratio_=config.min_perimeter_area_ratio;
-            max_perimeter_area_ratio_=config.max_perimeter_area_ratio;
-            shape_bias_=config.shape_bias;
             x_scale_=config.x_scale;
             y_scale_=config.y_scale;
             text_size_=config.text_size;
             y_bias_=config.y_bias;
+            save_on_=config.save_on;
         }
 
         Detector::~Detector()=default;

@@ -11,6 +11,8 @@
 #include "dynamic_reconfigure/server.h"
 #include "mineral_detect/dynamicConfig.h"
 #include "std_msgs/Float32MultiArray.h"
+#include<iostream>
+#include<fstream>
 namespace mineral_detect
 {
     class Detector : public nodelet::Nodelet {
@@ -31,6 +33,8 @@ namespace mineral_detect
 
         bool rectColorChoose(const cv::Rect &rect);
 
+        cv::Point2i getTLPoint(const std::vector<cv::Point2i> &hull);
+
         cv_bridge::CvImagePtr cv_image_;
         int morph_type_;
         int morph_iterations_;
@@ -49,8 +53,8 @@ namespace mineral_detect
         double y_scale_;
         double text_size_;
         double y_bias_;
-        double back_hu1_;
-        double back_hu2_;
+        bool save_on_;
+
         cv::Mat camera_matrix_;
         cv::Mat distortion_coefficients_;
         cv::Mat rvec_;
