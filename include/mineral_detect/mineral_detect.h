@@ -27,13 +27,7 @@ namespace mineral_detect
 
         void dynamicCallback(mineral_detect::dynamicConfig& config);
 
-        cv::Point2i targetPointSelect(std::vector<cv::Point2i> &points_vec,std::vector<cv::Rect> &rect_vec,std::vector<cv::Point2i> &text_vec);
-
-        bool chooseRect(const cv::Rect &rect);
-
-        bool rectColorChoose(const cv::Rect &rect);
-
-        cv::Point2i getTLPoint(const std::vector<cv::Point2i> &hull);
+        cv::Point2i targetPointSelect(std::vector<cv::Point2i> &points_vec);
 
         cv_bridge::CvImagePtr cv_image_;
         int morph_type_;
@@ -44,16 +38,12 @@ namespace mineral_detect
         int upper_hsv_h_;
         int upper_hsv_s_;
         int upper_hsv_v_;
-        double min_perimeter_area_ratio_;
-        double max_perimeter_area_ratio_;
         double min_area_thresh_;
-        double roi_nonzero_percent_;
-        double shape_bias_;
-        double x_scale_;
-        double y_scale_;
-        double text_size_;
-        double y_bias_;
-        bool save_on_;
+        double min_area_r_thresh_;
+        double max_area_r_thresh_;
+        double hu_moment_min_;
+        double hu_moment_max_;
+        double back_humoment_;
 
         cv::Mat camera_matrix_;
         cv::Mat distortion_coefficients_;
@@ -65,7 +55,7 @@ namespace mineral_detect
         ros::Publisher test_publisher_;
         ros::Publisher hsv_publisher_;
         ros::Publisher point_publisher_;
-        ros::Publisher gray_publisher_;
+        ros::Publisher mask_publisher_;
         ros::Subscriber subscriber_;
     };
 }
